@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>应用授权管理</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <h1>应用授权</h1>
+                <div class="header-desc">管理应用授权，包括Web应用、微服务等资源的访问权限</div>
+            </div>
+            <div class="header-right">
+                <button id="helpBtn" class="icon-btn">?</button>
+                <button id="settingsBtn" class="text-btn">未提供文案的按钮</button>
+                <button id="exportBtn" class="text-btn">应用授权文档导出</button>
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="sidebar">
+                <div class="sidebar-tabs">
+                    <div class="sidebar-tab active" data-tab="user-group">用户组</div>
+                    <div class="sidebar-tab" data-tab="organization">组织机构</div>
+                    <div class="sidebar-tab" data-tab="user">用户</div>
+                </div>
+                <div class="search-box">
+                    <input type="text" placeholder="输入名称搜索" id="entitySearch">
+                </div>
+                <div class="entity-tree" id="entityTree">
+                    <!-- 树结构将通过JavaScript动态生成 -->
+                    <div class="tree-node expanded">
+                        <div class="tree-node-content">用户组</div>
+                        <div class="tree-children">
+                            <div class="tree-node">
+                                <div class="tree-node-content selected">全部用户组</div>
+                            </div>
+                            <div class="tree-node">
+                                <div class="tree-node-content">管理员组</div>
+                            </div>
+                            <div class="tree-node">
+                                <div class="tree-node-content">开发组</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tree-node">
+                        <div class="tree-node-content">组织机构</div>
+                        <div class="tree-children" style="display: none;">
+                            <div class="tree-node">
+                                <div class="tree-node-content">总部</div>
+                            </div>
+                            <div class="tree-node">
+                                <div class="tree-node-content">研发部</div>
+                            </div>
+                            <div class="tree-node">
+                                <div class="tree-node-content">市场部</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tree-node">
+                        <div class="tree-node-content">用户</div>
+                        <div class="tree-children" style="display: none;">
+                            <div class="tree-node">
+                                <div class="tree-node-content">张三</div>
+                            </div>
+                            <div class="tree-node">
+                                <div class="tree-node-content">李四</div>
+                            </div>
+                            <div class="tree-node">
+                                <div class="tree-node-content">王五</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="main-content">
+                <div class="app-tabs-container">
+                    <div class="app-tabs">
+                        <div class="app-tab active" data-app-tab="web">WEB应用</div>
+                        <div class="app-tab" data-app-tab="tunnel">隧道应用</div>
+                        <div class="app-tab" data-app-tab="group">应用组</div>
+                    </div>
+                    <div class="auth-count" id="authCount">已授权：0个Web应用，0个隧道应用，0个应用组</div>
+                </div>
+                
+                <div class="filter-bar">
+                    <div class="search-box wide">
+                        <input type="text" placeholder="输入应用名称或域名搜索" id="resourceSearch">
+                    </div>
+                    <button id="addAuthBtn" class="primary-btn">保存</button>
+                </div>
+
+                <div class="resource-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th width="40"><input type="checkbox" id="selectAllApps" title="全选/取消全选"></th>
+                                <th>应用图标</th>
+                                <th>应用名称</th>
+                                <th>访问地址</th>
+                                <th>有效期</th>
+                                <th>授权设置</th>
+                                <th>其他授权</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resourceTableBody">
+                            <!-- 表格内容将通过JavaScript动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination">
+                    <span>共 30 条</span>
+                    <div class="page-controls">
+                        <button class="page-btn active">1</button>
+                        <button class="page-btn">2</button>
+                        <button class="page-btn next">></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 授权设置弹窗 -->
+    <div class="modal" id="authSettingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>授权设置</h2>
+                <button class="close-btn" id="closeAuthModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>继承父组织授权：</label>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="inheritToggle" checked>
+                        <label for="inheritToggle"></label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>授权有效期：</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" id="permanentRadio" name="validityType" value="permanent" checked>
+                            <label for="permanentRadio">永久有效</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="temporaryRadio" name="validityType" value="temporary">
+                            <label for="temporaryRadio">设置有效期</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group date-range" id="dateRangeGroup" style="display: none;">
+                    <div class="date-input">
+                        <label>开始日期：</label>
+                        <input type="date" id="startDate">
+                    </div>
+                    <div class="date-input">
+                        <label>结束日期：</label>
+                        <input type="date" id="endDate">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="secondary-btn" id="cancelAuthBtn">取消</button>
+                <button class="primary-btn" id="saveAuthBtn">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
