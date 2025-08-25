@@ -11,14 +11,21 @@
         <header>
             <div class="header-left">
                 <h1>应用授权</h1>
-                <div class="header-desc">管理应用授权，包括Web应用、微服务等资源的访问权限</div>
+                <select id="adminSelector" class="admin-selector">
+                    <option value="super">总管理员</option>
+                    <option value="sub1">子管理员1</option>
+                    <option value="sub2">子管理员2</option>
+                    <option value="sub3">子管理员3</option>
+                </select>
+                <button id="helpBtn" class="icon-btn">i</button>
             </div>
             <div class="header-right">
-                <button id="helpBtn" class="icon-btn">?</button>
-                <button id="settingsBtn" class="text-btn">未提供文案的按钮</button>
-                <button id="exportBtn" class="text-btn">应用授权文档导出</button>
+                <button id="inheritBtn" class="text-btn">组织机构授权管理</button>
+                <button id="settingsBtn" class="text-btn">未授权文案自定义</button>
+                <button id="exportBtn" class="text-btn">应用授权汇总查询</button>
             </div>
         </header>
+        <div class="header-desc">应用授权更新后，预计10s后生效。包括修改部门、用户组、应用组信息，间接导致应用授权信息变更，也需要10s后才生效。</div>
 
         <div class="content">
             <div class="sidebar">
@@ -36,7 +43,7 @@
                         <div class="tree-node-content">用户组</div>
                         <div class="tree-children">
                             <div class="tree-node">
-                                <div class="tree-node-content selected">全部用户组</div>
+                                <div class="tree-node-content selected">运维用户组</div>
                             </div>
                             <div class="tree-node">
                                 <div class="tree-node-content">管理员组</div>
@@ -89,9 +96,8 @@
                 
                 <div class="filter-bar">
                     <div class="search-box wide">
-                        <input type="text" placeholder="输入应用名称或域名搜索" id="resourceSearch">
+                        <input type="text" placeholder="请输入应用名称搜索" id="resourceSearch">
                     </div>
-                    <button id="addAuthBtn" class="primary-btn">保存</button>
                 </div>
 
                 <div class="resource-table">
@@ -102,9 +108,8 @@
                                 <th>应用图标</th>
                                 <th>应用名称</th>
                                 <th>访问地址</th>
-                                <th>有效期</th>
-                                <th>授权设置</th>
-                                <th>其他授权</th>
+                                <th>授权状态</th>
+                                <th>操作</th>
                             </tr>
                         </thead>
                         <tbody id="resourceTableBody">
@@ -114,8 +119,11 @@
                 </div>
 
                 <div class="pagination">
-                    <span>共 30 条</span>
+                    <div class="pagination-left">
+                        <button id="addAuthBtn" class="primary-btn">批量授权设置</button>
+                    </div>
                     <div class="page-controls">
+                        <span class="total-count">共 30 条</span>
                         <button class="page-btn active">1</button>
                         <button class="page-btn">2</button>
                         <button class="page-btn next">></button>
@@ -134,26 +142,29 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label>继承父组织授权：</label>
-                    <div class="toggle-switch">
-                        <input type="checkbox" id="inheritToggle" checked>
-                        <label for="inheritToggle"></label>
+                    <div class="switch-container">
+                        <label class="switch-label">启用授权</label>
+                        <label class="switch">
+                            <input type="checkbox" id="authEnableToggle">
+                            <span class="slider round"></span>
+                        </label>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>授权有效期：</label>
-                    <div class="radio-group">
-                        <div class="radio-item">
-                            <input type="radio" id="permanentRadio" name="validityType" value="permanent" checked>
-                            <label for="permanentRadio">永久有效</label>
-                        </div>
-                        <div class="radio-item">
-                            <input type="radio" id="temporaryRadio" name="validityType" value="temporary">
-                            <label for="temporaryRadio">设置有效期</label>
+                <div id="authSettingsContent" style="display: none;">
+                    <div class="form-group">
+                        <label>授权有效期：</label>
+                        <div class="radio-group">
+                            <div class="radio-item">
+                                <input type="radio" id="permanentRadio" name="validityType" value="permanent" checked>
+                                <label for="permanentRadio">永久有效</label>
+                            </div>
+                            <div class="radio-item">
+                                <input type="radio" id="temporaryRadio" name="validityType" value="temporary">
+                                <label for="temporaryRadio">设置有效期</label>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="form-group date-range" id="dateRangeGroup" style="display: none;">
+                    <div class="form-group date-range" id="dateRangeGroup" style="display: none;">
                     <div class="date-input">
                         <label>开始日期：</label>
                         <input type="date" id="startDate">
@@ -163,10 +174,126 @@
                         <input type="date" id="endDate">
                     </div>
                 </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="secondary-btn" id="cancelAuthBtn">取消</button>
                 <button class="primary-btn" id="saveAuthBtn">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 组织机构授权管理弹窗 -->
+    <div class="modal" id="inheritSettingsModal">
+        <div class="modal-content inherit-modal-content">
+            <div class="modal-header">
+                <h2>组织机构授权管理</h2>
+                <span class="close-btn" id="closeInheritModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="inherit-warning" id="inheritWarning">
+                    <span class="info-icon">i</span>
+                    <p>启用排除名单后，名单中的用户将不再自动获得组织机构的授权，但用户组的授权不受影响。您需要单独为这些用户设置授权。</p>
+                </div>
+                <div class="form-group">
+                    <div class="switch-container">
+                        <label class="switch-label">启用授权排除名单</label>
+                        <label class="switch">
+                            <input type="checkbox" id="inheritToggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- 用户列表部分 -->
+                <div class="user-list-container" id="userListContainer" style="display: none;">
+                    <div class="user-list-header">
+                        <h3>授权排除名单</h3>
+                        <button class="add-user-btn" id="addUserBtn">添加用户</button>
+                    </div>
+                    <div class="user-list" id="exceptionUserList">
+                        <!-- 用户列表将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="cancel-btn" id="cancelInheritBtn">取消</button>
+                <button class="primary-btn" id="saveInheritBtn">确定</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 添加用户弹窗 -->
+<div id="addUserModal" class="modal">
+    <div class="modal-content modal-content-wide">
+        <div class="modal-header">
+            <h2>添加授权排除名单用户</h2>
+            <span id="closeAddUserModal" class="close-btn">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="search-container">
+                <input type="text" id="searchInput" class="search-input" placeholder="搜索用户名或部门">
+                <button id="searchBtn" class="search-btn">搜索</button>
+            </div>
+            <div class="dual-list-container">
+                <div class="list-panel">
+                    <div class="list-header">可选用户</div>
+                    <div id="availableUsersList" class="user-selection-list"></div>
+                </div>
+                <div class="list-actions">
+                    <button id="addSelectedUsersBtn" class="action-btn" title="添加选中用户">&gt;&gt;</button>
+                    <button id="removeSelectedUsersBtn" class="action-btn" title="移除选中用户">&lt;&lt;</button>
+                </div>
+                <div class="list-panel">
+                    <div class="list-header">已选用户</div>
+                    <div id="selectedUsersList" class="user-selection-list"></div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="cancelAddUserBtn" class="cancel-btn">取消</button>
+            <button id="confirmAddUsersBtn" class="primary-btn">确定</button>
+        </div>
+    </div>
+</div>
+
+    <!-- 查看其他授权抽屉式弹窗 -->
+    <div class="drawer-modal" id="otherAuthDrawer">
+        <div class="drawer-content">
+            <div class="drawer-header">
+                <button class="close-btn" id="closeOtherAuthDrawer">&times;</button>
+                <h2>查看其他授权</h2>
+            </div>
+            <div class="drawer-body">
+                <div class="auth-table-container">
+                    <table class="auth-table">
+                        <thead>
+                            <tr>
+                                <th>应用</th>
+                                <th>主体</th>
+                                <th>授权有效期</th>
+                                <th>创建者</th>
+                                <th>所属角色</th>
+                            </tr>
+                        </thead>
+                        <tbody id="otherAuthTableBody">
+                            <tr>
+                                <td>程序员工具集</td>
+                                <td>应用组 → 所有应用组</td>
+                                <td>永久授权</td>
+                                <td>-</td>
+                                <td>总管理员</td>
+                            </tr>
+                            <tr>
+                                <td>程序员工具集</td>
+                                <td>应用组 → 所有公司用户</td>
+                                <td>2023-01-01 至 2023-12-31</td>
+                                <td>-</td>
+                                <td>总管理员</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
