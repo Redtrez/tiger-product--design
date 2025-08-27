@@ -1,6 +1,163 @@
 // 当前编辑的资源
 let currentEditingResource = null;
 
+// Toast提示函数
+function showToast(message, type = 'info') {
+    // 创建toast容器（如果不存在）
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            pointer-events: none;
+        `;
+        document.body.appendChild(toastContainer);
+    }
+    
+    // 创建toast元素
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    
+    // 创建toast内容容器
+    const toastContent = document.createElement('div');
+    toastContent.style.cssText = `
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+    `;
+    
+    // 创建消息文本
+    const messageSpan = document.createElement('span');
+    messageSpan.textContent = message;
+    messageSpan.style.cssText = `
+        flex: 1;
+        margin-right: 12px;
+    `;
+    
+    // 创建关闭按钮
+    const closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '×';
+    closeBtn.style.cssText = `
+        background: none;
+        border: none;
+        color: inherit;
+        font-size: 18px;
+        cursor: pointer;
+        padding: 0;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+    `;
+    
+    closeBtn.addEventListener('click', () => {
+        closeToast(toast);
+    });
+    
+    closeBtn.addEventListener('mouseenter', () => {
+        closeBtn.style.opacity = '1';
+    });
+    
+    closeBtn.addEventListener('mouseleave', () => {
+        closeBtn.style.opacity = '0.7';
+    });
+    
+    // 组装toast内容
+    toastContent.appendChild(messageSpan);
+    toastContent.appendChild(closeBtn);
+    toast.appendChild(toastContent);
+    
+    // 设置toast样式
+    const baseStyles = `
+        padding: 12px 16px;
+        margin-bottom: 10px;
+        border-radius: 6px;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        opacity: 0;
+        transform: translateX(100%);
+        transition: all 0.3s ease;
+        pointer-events: auto;
+        min-width: 320px;
+        max-width: 480px;
+        white-space: nowrap;
+        background-color: white;
+        border: 1px solid #e8e8e8;
+    `;
+    
+    let typeStyles = '';
+    switch(type) {
+        case 'success':
+            typeStyles = 'color: #52c41a; border-left: 4px solid #52c41a;';
+            break;
+        case 'error':
+            typeStyles = 'color: #ff4d4f; border-left: 4px solid #ff4d4f;';
+            break;
+        case 'warning':
+            typeStyles = 'color: #faad14; border-left: 4px solid #faad14;';
+            break;
+        default:
+            typeStyles = 'color: #1890ff; border-left: 4px solid #1890ff;';
+    }
+    
+    toast.style.cssText = baseStyles + typeStyles;
+    
+    // 添加到容器
+    toastContainer.appendChild(toast);
+    
+    // 显示动画
+    setTimeout(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(0)';
+    }, 10);
+    
+    // 自动消失
+    const autoCloseTimer = setTimeout(() => {
+        closeToast(toast);
+    }, 3000);
+    
+    // 鼠标悬停时暂停自动关闭
+    toast.addEventListener('mouseenter', () => {
+        clearTimeout(autoCloseTimer);
+    });
+    
+    toast.addEventListener('mouseleave', () => {
+        setTimeout(() => {
+            closeToast(toast);
+        }, 1000);
+    });
+}
+
+// 关闭toast的辅助函数
+function closeToast(toast) {
+    if (toast && toast.parentNode) {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }
+}
+
+// 确保DOM元素存在的辅助函数
+function ensureElement(id) {
+    const element = document.getElementById(id);
+    if (!element) {
+        console.error(`元素 #${id} 不存在`);
+    }
+    return element;
+}
+
 // 模拟数据
 const resourcesData = [
     // 未授权
@@ -315,18 +472,26 @@ const resourcesData = [
 ];
 
 // DOM元素
-const resourceTableBody = document.getElementById('resourceTableBody');
+let resourceTableBody = null;
+
+// 在DOMContentLoaded事件中初始化DOM元素引用
+function initDOMReferences() {
+    resourceTableBody = ensureElement('resourceTableBody');
+}
 const authSettingsModal = document.getElementById('authSettingsModal');
 const closeAuthModal = document.getElementById('closeAuthModal');
-const authEnableToggle = document.getElementById('authEnableToggle');
 const authSettingsContent = document.getElementById('authSettingsContent');
-const permanentRadio = document.getElementById('permanentRadio');
-const temporaryRadio = document.getElementById('temporaryRadio');
-const dateRangeGroup = document.getElementById('dateRangeGroup');
-const startDateInput = document.getElementById('startDate');
-const endDateInput = document.getElementById('endDate');
+const authTypeIndicator = document.getElementById('authTypeIndicator');
+// 使用let而不是const，因为这些元素会在openAuthSettingsModal函数中重新赋值
+let authTypeBadge = document.getElementById('authTypeBadge');
+let permanentRadio = document.getElementById('permanentRadio');
+let temporaryRadio = document.getElementById('temporaryRadio');
+let dateRangeGroup = document.getElementById('dateRangeGroup');
+let startDateInput = document.getElementById('startDate');
+let endDateInput = document.getElementById('endDate');
 const saveAuthBtn = document.getElementById('saveAuthBtn');
 const cancelAuthBtn = document.getElementById('cancelAuthBtn');
+const removeAuthBtn = document.getElementById('removeAuthBtn');
 const resourceSearch = document.getElementById('resourceSearch');
 const entitySearch = document.getElementById('entitySearch');
 const entityTree = document.getElementById('entityTree');
@@ -335,6 +500,11 @@ const sidebarTabs = document.querySelectorAll('.sidebar-tab');
 
 // 当前编辑的资源ID
 let currentEditingId = null;
+// 当前编辑模式
+let currentEditingMode = 'add';
+// 原始日期值（用于编辑模式下的校验）
+let originalStartDate = null;
+let originalEndDate = null;
 
 // 当前选中的实体和应用类型
 let currentEntity = '运维用户组';
@@ -373,28 +543,38 @@ function initPage() {
     // 初始化树结构视图
     updateTreeView('user-group');
     
+    // 添加批量操作按钮（必须在渲染表格之前初始化）
+    addBatchActionButton();
+    
     // 初始化资源表格
     renderResourceTable('', 'web');
     
     // 更新已授权标签页显示的授权数量
     updateSelfTabAuthCount();
     
-    // 添加批量操作按钮
-    addBatchActionButton();
-    
     // 设置事件监听器
     setupEventListeners();
 }
 
-// 更新保存按钮功能
+// 初始化批量操作按钮
 function addBatchActionButton() {
-    // 获取保存按钮
-    const saveBtn = document.getElementById('addAuthBtn');
-    if (saveBtn) {
+    // 获取批量取消授权按钮
+    const batchRemoveAuthBtn = document.getElementById('batchRemoveAuthBtn');
+    // 获取批量授权按钮
+    const batchAuthBtn = document.getElementById('batchAuthBtn');
+    
+    if (batchRemoveAuthBtn) {
         // 初始状态隐藏
-        saveBtn.style.display = 'none';
+        batchRemoveAuthBtn.style.display = 'none';
+        // 添加批量取消授权功能
+        batchRemoveAuthBtn.addEventListener('click', batchRemoveAuthorize);
+    }
+    
+    if (batchAuthBtn) {
+        // 初始状态隐藏
+        batchAuthBtn.style.display = 'none';
         // 添加批量授权功能
-        saveBtn.addEventListener('click', batchAuthorize);
+        batchAuthBtn.addEventListener('click', openBatchAuthModal);
     }
 }
 
@@ -412,14 +592,119 @@ function updateSelectAllCheckboxState() {
     }
 }
 
-// 更新保存按钮显示状态
+// 更新批量操作按钮显示状态
 function updateBatchActionButton() {
-    const saveBtn = document.getElementById('addAuthBtn');
+    const batchRemoveAuthBtn = document.getElementById('batchRemoveAuthBtn');
+    const batchAuthBtn = document.getElementById('batchAuthBtn');
     const checkedBoxes = document.querySelectorAll('.app-checkbox:checked');
     
-    if (saveBtn) {
-        saveBtn.style.display = checkedBoxes.length > 0 ? 'block' : 'none';
-        saveBtn.textContent = `批量授权设置 (${checkedBoxes.length})`;
+    // 只有当有复选框被选中时才显示批量操作按钮
+    if (checkedBoxes.length > 0) {
+        if (batchRemoveAuthBtn) {
+            batchRemoveAuthBtn.style.display = 'block';
+            batchRemoveAuthBtn.textContent = `批量取消授权 (${checkedBoxes.length})`;
+        }
+        if (batchAuthBtn) {
+            batchAuthBtn.style.display = 'block';
+            batchAuthBtn.textContent = `批量授权 (${checkedBoxes.length})`;
+        }
+    } else {
+        if (batchRemoveAuthBtn) {
+            batchRemoveAuthBtn.style.display = 'none';
+        }
+        if (batchAuthBtn) {
+            batchAuthBtn.style.display = 'none';
+        }
+    }
+    console.log('更新批量操作按钮，当前选中数量:', checkedBoxes.length);
+}
+
+// 批量授权功能
+// 打开批量授权弹窗
+function openBatchAuthModal() {
+    const checkedBoxes = document.querySelectorAll('.app-checkbox:checked');
+    const selectedIds = Array.from(checkedBoxes).map(checkbox => parseInt(checkbox.getAttribute('data-id')));
+    
+    if (selectedIds.length > 0) {
+        // 显示批量授权弹窗
+        const batchAuthSettingsModal = document.getElementById('batchAuthSettingsModal');
+        if (batchAuthSettingsModal) {
+            batchAuthSettingsModal.style.display = 'flex';
+            
+            // 初始化批量授权弹窗的表单
+            initBatchAuthForm();
+            
+            // 绑定关闭按钮事件
+            const closeBtn = document.getElementById('closeBatchAuthModal');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', closeBatchAuthModal);
+            }
+            
+            // 绑定取消按钮事件
+            const cancelBtn = document.getElementById('cancelBatchAuthBtn');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', closeBatchAuthModal);
+            }
+            
+            // 绑定保存按钮事件
+            const saveBtn = document.getElementById('saveBatchAuthBtn');
+            if (saveBtn) {
+                // 移除之前的事件监听器
+                const newSaveBtn = saveBtn.cloneNode(true);
+                saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+                
+                // 添加新的事件监听器
+                newSaveBtn.addEventListener('click', batchAuthorize);
+            }
+        }
+    }
+}
+
+// 初始化批量授权弹窗的表单
+function initBatchAuthForm() {
+    // 获取表单元素
+    const permanentRadio = document.getElementById('batchPermanentRadio');
+    const temporaryRadio = document.getElementById('batchTemporaryRadio');
+    const dateRangeGroup = document.getElementById('batchDateRangeGroup');
+    const startDateInput = document.getElementById('batchStartDate');
+    const endDateInput = document.getElementById('batchEndDate');
+    
+    // 设置默认值
+    permanentRadio.checked = true;
+    temporaryRadio.checked = false;
+    dateRangeGroup.style.display = 'none';
+    
+    // 清空日期输入
+    startDateInput.value = '';
+    endDateInput.value = '';
+    
+    // 清除错误状态
+    clearBatchDateInputErrors();
+    
+    // 添加单选按钮事件监听器
+    permanentRadio.addEventListener('change', function() {
+        if (this.checked) {
+            dateRangeGroup.style.display = 'none';
+            clearBatchDateInputErrors();
+        }
+    });
+    
+    temporaryRadio.addEventListener('change', function() {
+        if (this.checked) {
+            dateRangeGroup.style.display = 'flex';
+        }
+    });
+    
+    // 添加日期输入框的实时校验
+    startDateInput.addEventListener('input', validateBatchDateInputsRealTime);
+    endDateInput.addEventListener('input', validateBatchDateInputsRealTime);
+}
+
+// 关闭批量授权弹窗
+function closeBatchAuthModal() {
+    const batchAuthSettingsModal = document.getElementById('batchAuthSettingsModal');
+    if (batchAuthSettingsModal) {
+        batchAuthSettingsModal.style.display = 'none';
     }
 }
 
@@ -429,98 +714,188 @@ function batchAuthorize() {
     const selectedIds = Array.from(checkedBoxes).map(checkbox => parseInt(checkbox.getAttribute('data-id')));
     
     if (selectedIds.length > 0) {
-        // 创建一个批量授权设置对话框
-        openBatchAuthModal(selectedIds);
-    }
-}
-
-// 打开批量授权设置对话框
-function openBatchAuthModal(selectedIds) {
-    // 先打开授权设置弹窗，显示第一个应用的设置作为默认值
-    openAuthSettingsModal(selectedIds[0]);
-    
-    // 修改弹窗标题，表明这是批量授权
-    const modalTitle = document.createElement('div');
-    modalTitle.className = 'modal-batch-title';
-    modalTitle.textContent = `批量授权设置 (${selectedIds.length} 个应用)`;
-    
-    // 将标题添加到modal-content的开头，而不是整个modal
-    const modalContent = authSettingsModal.querySelector('.modal-content');
-    modalContent.insertBefore(modalTitle, modalContent.firstChild);
-    
-    // 修改保存按钮的点击事件，使其应用到所有选中的应用
-    const originalSaveBtn = saveAuthBtn.cloneNode(true);
-    saveAuthBtn.parentNode.replaceChild(originalSaveBtn, saveAuthBtn);
-    
-    originalSaveBtn.addEventListener('click', function() {
-        // 获取当前设置
-        const isAuthorized = authEnableToggle.checked;
-        let validitySetting;
+        // 获取授权设置
+        const permanentRadio = document.getElementById('batchPermanentRadio');
+        const startDateInput = document.getElementById('batchStartDate');
+        const endDateInput = document.getElementById('batchEndDate');
         
-        // 如果授权开关关闭，则设置为无授权状态
-        if (!isAuthorized) {
-            validitySetting = {
-                type: 'none',
-                startDate: null,
-                endDate: null
-            };
-        } else if (permanentRadio.checked) {
-            validitySetting = {
-                type: 'permanent',
-                startDate: null,
-                endDate: null
-            };
-        } else {
-            // 验证日期输入
-            if (!validateDateInputs()) {
-                // 如果验证失败，显示提示信息
-                if (!startDateInput.value || !endDateInput.value) {
-                    alert('请同时设置开始日期和结束日期');
-                } else if (startDateInput.value > endDateInput.value) {
-                    alert('开始日期不能晚于结束日期');
-                }
-                return;
+        // 清除之前的错误提示
+        clearBatchDateInputErrors();
+        
+        let isValid = true;
+        
+        // 验证表单
+        if (!permanentRadio.checked) {
+            if (!startDateInput.value) {
+                startDateInput.classList.add('error');
+                document.getElementById('batchStartDateError').textContent = '请选择开始日期';
+                isValid = false;
             }
             
-            validitySetting = {
-                type: 'temporary',
-                startDate: startDateInput.value,
-                endDate: endDateInput.value
-            };
+            if (!endDateInput.value) {
+                endDateInput.classList.add('error');
+                document.getElementById('batchEndDateError').textContent = '请选择结束日期';
+                isValid = false;
+            }
+            
+            // 如果是临时授权，验证日期
+            if (startDateInput.value && endDateInput.value) {
+                const startDate = new Date(startDateInput.value);
+                const endDate = new Date(endDateInput.value);
+                const today = new Date().toISOString().split('T')[0];
+                
+                if (endDate <= startDate) {
+                    startDateInput.classList.add('error');
+                    endDateInput.classList.add('error');
+                    // 添加红色闪烁效果
+                    startDateInput.classList.add('flash-error');
+                    endDateInput.classList.add('flash-error');
+                    // 2秒后移除闪烁效果
+                    setTimeout(() => {
+                        startDateInput.classList.remove('flash-error');
+                        endDateInput.classList.remove('flash-error');
+                    }, 2000);
+                    document.getElementById('batchStartDateError').textContent = '开始日期不能晚于结束日期';
+                    isValid = false;
+                }
+                
+                if (startDateInput.value < today) {
+                    startDateInput.classList.add('error');
+                    document.getElementById('batchStartDateError').textContent = '开始日期不能早于今天';
+                    isValid = false;
+                }
+                
+                if (endDateInput.value < today) {
+                    endDateInput.classList.add('error');
+                    document.getElementById('batchEndDateError').textContent = '结束日期不能早于今天';
+                    isValid = false;
+                }
+            }
         }
         
-        // 应用设置到所有选中的应用
+        if (!isValid) {
+            return;
+        }
+        
+        // 应用设置到所有选中的资源
         selectedIds.forEach(id => {
             const resourceIndex = resourcesData.findIndex(item => item.id === id);
+            
             if (resourceIndex !== -1) {
-                // 更新有效期设置
-                resourcesData[resourceIndex].validity = {...validitySetting};
+                // 更新资源的授权状态
+                if (permanentRadio.checked) {
+                    // 永久授权
+                    resourcesData[resourceIndex].validity = {
+                        type: 'permanent'
+                    };
+                } else {
+                    // 临时授权
+                    resourcesData[resourceIndex].validity = {
+                        type: 'temporary',
+                        startDate: startDateInput.value,
+                        endDate: endDateInput.value
+                    };
+                }
             }
         });
         
-        // 重新渲染表格
-        renderResourceTable(resourceSearch.value, currentAppType);
-        
-        // 更新自己的标签页显示的授权数量
-        updateSelfTabAuthCount();
-        
         // 关闭弹窗
-        closeModal();
+        closeBatchAuthModal();
         
-        // 取消所有选中状态
-        const checkedBoxes = document.querySelectorAll('.app-checkbox:checked');
-        checkedBoxes.forEach(checkbox => checkbox.checked = false);
+        // 取消所有选中状态（在重新渲染表格之前）
+        document.querySelectorAll('.app-checkbox:checked').forEach(checkbox => {
+            checkbox.checked = false;
+        });
         
         // 更新全选复选框状态
         updateSelectAllCheckboxState();
         
-        // 隐藏保存按钮
+        // 隐藏批量按钮
         updateBatchActionButton();
         
+        // 重新渲染表格
+        renderResourceTable(resourceSearch.value, currentAppType);
+        
+        // 更新授权数量
+        updateAuthCount();
+        
         // 显示成功提示
-        alert(`成功保存 ${selectedIds.length} 个应用的授权设置！`);
-    });
+        showToast('授权设置修改成功', 'success');
+    }
 }
+
+// 批量取消授权功能
+function batchRemoveAuthorize() {
+    const checkedBoxes = document.querySelectorAll('.app-checkbox:checked');
+    const selectedIds = Array.from(checkedBoxes).map(checkbox => parseInt(checkbox.getAttribute('data-id')));
+    
+    if (selectedIds.length > 0) {
+        // 显示确认对话框
+        const confirmText = document.querySelector('#removeAuthModal .confirm-text');
+        if (confirmText) {
+            confirmText.textContent = `批量操作：确定要取消这 ${selectedIds.length} 个选中资源的授权吗？`;
+        }
+        
+        // 修改弹窗标题为批量取消授权
+        const modalTitle = document.querySelector('#removeAuthModal .modal-header h2');
+        if (modalTitle) {
+            modalTitle.textContent = '批量取消授权';
+        }
+        
+        // 显示取消授权确认弹窗
+        const removeAuthModal = document.getElementById('removeAuthModal');
+        if (removeAuthModal) {
+            removeAuthModal.style.display = 'flex';
+            
+            // 修改确认按钮的点击事件
+            const confirmBtn = document.getElementById('confirmRemoveAuthBtn');
+            if (confirmBtn) {
+                // 移除之前的事件监听器
+                const newConfirmBtn = confirmBtn.cloneNode(true);
+                confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+                
+                // 添加新的事件监听器
+                newConfirmBtn.addEventListener('click', function() {
+                    // 应用设置到所有选中的应用
+                    selectedIds.forEach(id => {
+                        const resourceIndex = resourcesData.findIndex(item => item.id === id);
+                        if (resourceIndex !== -1) {
+                            // 更新为未授权状态
+                            resourcesData[resourceIndex].validity = {
+                                type: 'none',
+                                startDate: null,
+                                endDate: null
+                            };
+                        }
+                    });
+                    
+                    // 重新渲染表格
+                    renderResourceTable(resourceSearch.value, currentAppType);
+                    
+                    // 更新自己的标签页显示的授权数量
+                    updateSelfTabAuthCount();
+                    
+                    // 关闭弹窗
+                    removeAuthModal.style.display = 'none';
+                    
+                    // 取消所有选中状态
+                    const checkedBoxes = document.querySelectorAll('.app-checkbox:checked');
+                    checkedBoxes.forEach(checkbox => checkbox.checked = false);
+                    
+                    // 更新全选复选框状态
+                    updateSelectAllCheckboxState();
+                    
+                    // 隐藏批量按钮
+                    updateBatchActionButton();
+                    
+                    // 显示成功提示
+                    showToast('授权设置修改成功', 'success');
+                });
+            }
+        }
+    }
+}
+
 
 // 更新树结构视图
 function updateTreeView(tabType) {
@@ -599,11 +974,7 @@ function updateTreeView(tabType) {
         }
     }
     
-    // 隐藏保存按钮，因为切换了实体类型，之前的选择已经失效
-    const saveBtn = document.getElementById('addAuthBtn');
-    if (saveBtn) {
-        saveBtn.style.display = 'none';
-    }
+
     // 重新绑定点击事件
     let selector = tabType === 'organization' ? '.tree-node-content' : '.tree-list-item';
     document.querySelectorAll(selector).forEach(node => {
@@ -624,11 +995,7 @@ function updateTreeView(tabType) {
             renderResourceTable(resourceSearch.value, currentAppType);
             updateSelfTabAuthCount();
             
-            // 隐藏保存按钮，因为切换了实体，之前的选择已经失效
-            const saveBtn = document.getElementById('addAuthBtn');
-            if (saveBtn) {
-                saveBtn.style.display = 'none';
-            }
+            // 批量操作按钮的隐藏已由renderResourceTable函数处理
             
             // 重置资源表格的滚动条位置到最左侧
             document.querySelector('.resource-table').scrollLeft = 0;
@@ -638,8 +1005,36 @@ function updateTreeView(tabType) {
 
 // 渲染资源表格
 function renderResourceTable(searchTerm = '', appType = 'web') {
-    // 清空表格
-    resourceTableBody.innerHTML = '';
+    // 确保resourceTableBody存在
+    if (!resourceTableBody) {
+        console.error('resourceTableBody元素不存在，尝试重新获取');
+        resourceTableBody = ensureElement('resourceTableBody');
+        if (!resourceTableBody) {
+            return; // 如果仍然不存在，则退出函数
+        }
+    }
+    
+    // 首先强制隐藏批量操作按钮，避免初始化时显示问题
+    let batchAuthBtnElement = document.getElementById('batchAuthBtn');
+    let batchRemoveAuthBtnElement = document.getElementById('batchRemoveAuthBtn');
+    if (batchAuthBtnElement) batchAuthBtnElement.style.display = 'none';
+    if (batchRemoveAuthBtnElement) batchRemoveAuthBtnElement.style.display = 'none';
+    
+    // 清空表格 - 使用更安全的方式
+    while (resourceTableBody.firstChild) {
+        resourceTableBody.removeChild(resourceTableBody.firstChild);
+    }
+    
+    // 重置全选复选框状态，确保清理旧状态
+    let selectAllCheckboxElement = document.getElementById('selectAllApps');
+    if (selectAllCheckboxElement) {
+        selectAllCheckboxElement.checked = false;
+    }
+    
+    // 清理可能残留的复选框状态
+    document.querySelectorAll('.app-checkbox:checked').forEach(checkbox => {
+        checkbox.checked = false;
+    });
     
     // 过滤数据
     let filteredData = [];
@@ -679,11 +1074,7 @@ function renderResourceTable(searchTerm = '', appType = 'web') {
             item.url.toLowerCase().includes(searchTerm.toLowerCase()));
     }
     
-    // 隐藏保存按钮，因为切换了数据源，之前的选择已经失效
-    const saveBtn = document.getElementById('addAuthBtn');
-    if (saveBtn) {
-        saveBtn.style.display = 'none';
-    }
+    // 批量操作按钮已在函数开始时隐藏
     
     // 渲染数据
     filteredData.forEach(resource => {
@@ -812,27 +1203,93 @@ function renderResourceTable(searchTerm = '', appType = 'web') {
         
         // 移除授权状态指示器的相关代码
         
-        row.innerHTML = `
-            <td>
-                <input type="checkbox" class="app-checkbox" data-id="${resource.id}">
-            </td>
-            <td>
-                <div class="app-icon-container">
-                    <div class="app-icon ${resource.iconColor}">${resource.icon}</div>
-                </div>
-            </td>
-            <td>
-                ${resource.name}
-            </td>
-            <td>${resource.url}</td>
-            <td>
-                <span class="validity-tag ${validityStatus}" title="${validityText}">${validityText.includes(',') ? validityText.split('(')[0] + '(多个时间段)' : validityText}</span>
-            </td>
-            <td class="action-column">
-                <button class="settings-btn" data-id="${resource.id}">授权设置</button>
-                ${resource.otherAuth ? `<button class="view-other-auth-btn" onclick="viewOtherAuth('${resource.otherAuth.id}')">查看其他授权</button>` : `<button class="view-other-auth-btn" disabled>查看其他授权</button>`}
-            </td>
-        `;
+        // 创建表格行内容
+        const checkboxCell = document.createElement('td');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'app-checkbox';
+        checkbox.setAttribute('data-id', resource.id);
+        // 不在这里添加事件监听器，使用表格级别的事件委托
+        checkboxCell.appendChild(checkbox);
+        row.appendChild(checkboxCell);
+        
+        // 图标单元格
+        const iconCell = document.createElement('td');
+        const iconContainer = document.createElement('div');
+        iconContainer.className = 'app-icon-container';
+        const icon = document.createElement('div');
+        icon.className = `app-icon ${resource.iconColor}`;
+        icon.textContent = resource.icon;
+        iconContainer.appendChild(icon);
+        iconCell.appendChild(iconContainer);
+        row.appendChild(iconCell);
+        
+        // 名称单元格
+        const nameCell = document.createElement('td');
+        nameCell.textContent = resource.name;
+        row.appendChild(nameCell);
+        
+        // URL单元格
+        const urlCell = document.createElement('td');
+        urlCell.textContent = resource.url;
+        row.appendChild(urlCell);
+        
+        // 授权状态单元格
+        const statusCell = document.createElement('td');
+        const statusSpan = document.createElement('span');
+        statusSpan.className = `validity-tag ${validityStatus}`;
+        statusSpan.title = validityText;
+        statusSpan.textContent = validityText.includes(',') ? validityText.split('(')[0] + '(多个时间段)' : validityText;
+        statusCell.appendChild(statusSpan);
+        row.appendChild(statusCell);
+        
+        // 操作单元格
+        const actionCell = document.createElement('td');
+        actionCell.className = 'action-column';
+        
+        // 添加/取消授权按钮
+        const authLink = document.createElement('a');
+        authLink.href = 'javascript:void(0)';
+        if (validityStatus === 'none') {
+            authLink.className = 'add-auth-btn action-link';
+            authLink.setAttribute('data-id', resource.id);
+            authLink.textContent = '新增授权';
+        } else {
+            authLink.className = 'remove-auth-btn action-link';
+            authLink.setAttribute('data-id', resource.id);
+            authLink.textContent = '取消授权';
+        }
+        actionCell.appendChild(authLink);
+        
+        // 编辑授权按钮
+        const editLink = document.createElement('a');
+        editLink.href = 'javascript:void(0)';
+        if (validityStatus !== 'none') {
+            editLink.className = 'edit-auth-btn action-link';
+            editLink.setAttribute('data-id', resource.id);
+            editLink.textContent = '编辑授权';
+        } else {
+            editLink.className = 'edit-auth-btn action-link disabled';
+            editLink.disabled = true;
+            editLink.textContent = '编辑授权';
+        }
+        actionCell.appendChild(editLink);
+        
+        // 查看其他授权按钮
+        const viewOtherLink = document.createElement('a');
+        viewOtherLink.href = 'javascript:void(0)';
+        if (resource.otherAuth) {
+            viewOtherLink.className = 'view-other-auth-btn';
+            viewOtherLink.onclick = function() { viewOtherAuth(resource.otherAuth.id); };
+            viewOtherLink.textContent = '查看其他授权';
+        } else {
+            viewOtherLink.className = 'view-other-auth-btn disabled';
+            viewOtherLink.disabled = true;
+            viewOtherLink.textContent = '查看其他授权';
+        }
+        actionCell.appendChild(viewOtherLink);
+        
+        row.appendChild(actionCell);
         
         resourceTableBody.appendChild(row);
         
@@ -847,11 +1304,10 @@ function renderResourceTable(searchTerm = '', appType = 'web') {
         });
     });
     
-    // 重置全选复选框状态
-    const selectAllCheckbox = document.getElementById('selectAllApps');
-    if (selectAllCheckbox) {
-        selectAllCheckbox.checked = false;
-    }
+    // 全选复选框状态已在函数开始时重置
+    
+    // 根据复选框状态更新批量授权按钮显示
+    updateBatchActionButton();
 }
 
 // 设置事件监听器
@@ -864,9 +1320,9 @@ function initAdminSelector() {
             console.log('已切换到管理员:', selectedAdmin);
             // 这里可以根据选择的管理员类型加载不同的数据或权限
             if (selectedAdmin === 'super') {
-                alert('已切换到总管理员视图');
+                showToast('已切换到总管理员视图', 'info');
             } else {
-                alert('已切换到' + this.options[this.selectedIndex].text + '视图');
+                showToast('已切换到' + this.options[this.selectedIndex].text + '视图', 'info');
             }
         });
     }
@@ -903,22 +1359,66 @@ function setupEventListeners() {
         if (e.target && e.target.classList.contains('app-checkbox')) {
             updateSelectAllCheckboxState();
             updateBatchActionButton();
+            console.log('复选框状态变化，当前选中数量:', document.querySelectorAll('.app-checkbox:checked').length);
         }
     });
     
-    // 授权开关切换
-    authEnableToggle.addEventListener('change', function() {
-        authSettingsContent.style.display = this.checked ? 'block' : 'none';
+    // 监听表格中的按钮点击事件
+    resourceTableBody.addEventListener('click', function(e) {
+        // 新增授权按钮
+        if (e.target && e.target.classList.contains('add-auth-btn')) {
+            const resourceId = parseInt(e.target.getAttribute('data-id'));
+            openAuthSettingsModal(resourceId, 'add');
+        }
         
-        // 当授权开关从关闭变为开启时，默认选择永久有效
-        if (this.checked) {
-            permanentRadio.checked = true;
-            temporaryRadio.checked = false;
-            dateRangeGroup.style.display = 'none';
+        // 取消授权按钮
+        if (e.target && e.target.classList.contains('remove-auth-btn')) {
+            const resourceId = parseInt(e.target.getAttribute('data-id'));
+            openRemoveAuthModal(resourceId);
+        }
+        
+        // 编辑授权按钮
+        if (e.target && e.target.classList.contains('edit-auth-btn')) {
+            const resourceId = parseInt(e.target.getAttribute('data-id'));
+            openAuthSettingsModal(resourceId, 'edit');
+        }
+        
+        // 查看其他授权按钮
+        if (e.target && e.target.classList.contains('view-other-auth-btn')) {
+            // 检查按钮是否被禁用
+            if (!e.target.classList.contains('disabled')) {
+                // 这里可以从按钮的data属性或其他方式获取authId
+                // 由于当前实现中直接在onclick中调用，我们保持兼容
+                if (e.target.onclick) {
+                    e.target.onclick();
+                }
+            }
         }
     });
+    
+    // 移除原有的取消授权按钮事件监听器，因为我们已经创建了新的取消授权弹窗
     
     // 有效期类型切换
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.id === 'temporaryRadio') {
+            if (e.target.checked) {
+                const dateRangeGroup = document.getElementById('dateRangeGroup');
+                const startDateInput = document.getElementById('startDate');
+                const endDateInput = document.getElementById('endDate');
+                
+                dateRangeGroup.style.display = 'flex';
+                // 设置默认的最小日期为今天
+                const today = new Date().toISOString().split('T')[0];
+                startDateInput.min = today;
+                
+                // 如果开始日期有值，设置结束日期的最小值为开始日期
+                if (startDateInput.value) {
+                    endDateInput.min = startDateInput.value;
+                }
+            }
+        }
+    });
+    
     temporaryRadio.addEventListener('change', function() {
         if (this.checked) {
             dateRangeGroup.style.display = 'flex';
@@ -936,32 +1436,49 @@ function setupEventListeners() {
     permanentRadio.addEventListener('change', function() {
         if (this.checked) {
             dateRangeGroup.style.display = 'none';
+            // 清空日期输入框的值
+            startDateInput.value = '';
+            endDateInput.value = '';
+            // 清除日期输入框的错误状态
+            clearDateInputErrors();
         }
     });
     
     // 日期输入框联动验证
     startDateInput.addEventListener('change', function() {
-        // 清除错误状态
-        this.classList.remove('error');
-        endDateInput.classList.remove('error');
+        validateDateInputsRealTime();
         
         // 设置结束日期的最小值为开始日期
         endDateInput.min = this.value;
         
-        // 如果结束日期早于开始日期，则清空结束日期
+        // 如果结束日期早于开始日期，则清空结束日期并提示
         if (endDateInput.value && endDateInput.value < this.value) {
             endDateInput.value = '';
+            showToast('结束日期已清空，请重新选择', 'warning');
         }
     });
     
     endDateInput.addEventListener('change', function() {
-        // 清除错误状态
-        this.classList.remove('error');
-        startDateInput.classList.remove('error');
+        validateDateInputsRealTime();
         
         // 如果开始日期为空，而结束日期有值，则设置开始日期的最大值为结束日期
         if (!startDateInput.value && this.value) {
             startDateInput.max = this.value;
+        }
+    });
+    
+    // 添加实时校验功能
+    startDateInput.addEventListener('blur', function() {
+        if (temporaryRadio.checked && !this.value) {
+            this.classList.add('error');
+            showToast('请选择开始日期', 'error');
+        }
+    });
+    
+    endDateInput.addEventListener('blur', function() {
+        if (temporaryRadio.checked && !this.value) {
+            this.classList.add('error');
+            showToast('请选择结束日期', 'error');
         }
     });
     
@@ -972,11 +1489,7 @@ function setupEventListeners() {
     resourceSearch.addEventListener('input', function() {
         renderResourceTable(this.value, currentAppType);
         
-        // 隐藏保存按钮，因为搜索改变了显示的资源，之前的选择可能已经失效
-        const saveBtn = document.getElementById('addAuthBtn');
-        if (saveBtn) {
-            saveBtn.style.display = 'none';
-        }
+
         
         // 重置资源表格的滚动条位置到最左侧
         document.querySelector('.resource-table').scrollLeft = 0;
@@ -1027,30 +1540,30 @@ function setupEventListeners() {
     });
     
     // 侧边栏标签页切换（用户组/组织机构/用户）
-document.querySelectorAll('.sidebar-tab').forEach(tab => {
-    tab.addEventListener('click', function() {
-        document.querySelector('.sidebar-tab.active').classList.remove('active');
-        this.classList.add('active');
-        
-        // 更新当前实体类型
-        currentEntityType = this.getAttribute('data-tab');
-        
-        // 根据选择的标签页更新树结构
-        updateTreeView(currentEntityType);
-        
-        // 更新授权计数显示
-        updateSelfTabAuthCount();
-        
-        // 隐藏保存按钮，因为切换了实体类型，之前的选择已经失效
-        const saveBtn = document.getElementById('addAuthBtn');
-        if (saveBtn) {
-            saveBtn.style.display = 'none';
-        }
-        
-        // 重置资源表格的滚动条位置到最左侧
-        document.querySelector('.resource-table').scrollLeft = 0;
+    document.querySelectorAll('.sidebar-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            document.querySelector('.sidebar-tab.active').classList.remove('active');
+            this.classList.add('active');
+            
+            // 更新当前实体类型
+            currentEntityType = this.getAttribute('data-tab');
+            
+            // 根据选择的标签页更新树结构
+            updateTreeView(currentEntityType);
+            
+            // 更新授权计数显示
+            updateSelfTabAuthCount();
+            
+            // 隐藏批量操作按钮
+            const batchAuthBtn = document.getElementById('batchAuthBtn');
+            const batchRemoveAuthBtn = document.getElementById('batchRemoveAuthBtn');
+            if (batchAuthBtn) batchAuthBtn.style.display = 'none';
+            if (batchRemoveAuthBtn) batchRemoveAuthBtn.style.display = 'none';
+            
+            // 重置资源表格的滚动条位置到最左侧
+            document.querySelector('.resource-table').scrollLeft = 0;
+        });
     });
-});
     
     // 应用标签页切换
     appTabs.forEach(tab => {
@@ -1067,11 +1580,11 @@ document.querySelectorAll('.sidebar-tab').forEach(tab => {
             // 更新已授权标签页显示的授权数量
             updateSelfTabAuthCount();
             
-            // 隐藏保存按钮，因为切换了应用类型，之前的选择已经失效
-            const saveBtn = document.getElementById('addAuthBtn');
-            if (saveBtn) {
-                saveBtn.style.display = 'none';
-            }
+            // 隐藏批量操作按钮
+            const batchAuthBtn = document.getElementById('batchAuthBtn');
+            const batchRemoveAuthBtn = document.getElementById('batchRemoveAuthBtn');
+            if (batchAuthBtn) batchAuthBtn.style.display = 'none';
+            if (batchRemoveAuthBtn) batchRemoveAuthBtn.style.display = 'none';
             
             // 重置资源表格的滚动条位置到最左侧
             document.querySelector('.resource-table').scrollLeft = 0;
@@ -1103,43 +1616,182 @@ document.querySelectorAll('.sidebar-tab').forEach(tab => {
             // 更新已授权标签页显示的授权数量
             updateSelfTabAuthCount();
             
+            // 隐藏批量操作按钮
+            const batchAuthBtn = document.getElementById('batchAuthBtn');
+            const batchRemoveAuthBtn = document.getElementById('batchRemoveAuthBtn');
+            if (batchAuthBtn) batchAuthBtn.style.display = 'none';
+            if (batchRemoveAuthBtn) batchRemoveAuthBtn.style.display = 'none';
+            
             // 重置资源表格的滚动条位置到最左侧
             document.querySelector('.resource-table').scrollLeft = 0;
         });
     });
 }
 
-// 打开授权设置弹窗
-function openAuthSettingsModal(resourceId) {
+// 打开取消授权确认弹窗
+function openRemoveAuthModal(resourceId) {
     const resource = resourcesData.find(item => item.id === resourceId);
     if (!resource) return;
     
     currentEditingId = resourceId;
     
-    // 设置授权开关状态
-    // 如果有有效期设置（无论是永久还是临时），则表示已授权
+    // 设置弹窗标题为取消授权
+    const modalTitle = document.querySelector('#removeAuthModal .modal-header h2');
+    if (modalTitle) {
+        modalTitle.textContent = '取消授权';
+    }
+    
+    // 显示取消授权弹窗
+    const removeAuthModal = document.getElementById('removeAuthModal');
+    removeAuthModal.style.display = 'flex';
+    
+    // 更新确认文本，明确表示只针对当前资源进行操作
+    const confirmText = document.querySelector('#removeAuthModal .confirm-text');
+    if (confirmText) {
+        confirmText.textContent = `确定要取消该资源的授权吗？`;
+    }
+}
+
+// 关闭取消授权弹窗
+function closeRemoveAuthModal() {
+    const removeAuthModal = document.getElementById('removeAuthModal');
+    removeAuthModal.style.display = 'none';
+    currentEditingId = null;
+}
+
+// 打开授权设置弹窗
+function openAuthSettingsModal(resourceId, mode = 'add') {
+    const resource = resourcesData.find(item => item.id === resourceId);
+    if (!resource) return;
+    
+    currentEditingId = resourceId;
+    currentEditingMode = mode;
+    
+    // 保存原始日期值（用于编辑模式下的校验）
+    if (mode === 'edit' && resource.validity.type === 'temporary') {
+        originalStartDate = resource.validity.startDate;
+        originalEndDate = resource.validity.endDate;
+    } else {
+        originalStartDate = null;
+        originalEndDate = null;
+    }
+    
+    // 判断授权状态
     const isAuthorized = resource.validity && (resource.validity.type === 'permanent' || 
         (resource.validity.type === 'temporary' && 
          resource.validity.startDate && resource.validity.endDate));
     
-    authEnableToggle.checked = isAuthorized;
-    authSettingsContent.style.display = isAuthorized ? 'block' : 'none';
+    // 获取授权内容区域
+    const authContent = document.getElementById('authSettingsContent');
     
-    // 设置有效期选项
-    if (resource.validity.type === 'permanent') {
-        permanentRadio.checked = true;
-        temporaryRadio.checked = false;
-        dateRangeGroup.style.display = 'none';
-        // 清空日期输入框的值
-        startDateInput.value = '';
-        endDateInput.value = '';
-    } else {
-        permanentRadio.checked = false;
-        temporaryRadio.checked = true;
-        dateRangeGroup.style.display = 'flex';
-        startDateInput.value = resource.validity.startDate;
-        endDateInput.value = resource.validity.endDate;
-    }
+    // 设置弹窗标题
+    const authModalTitle = document.getElementById('authModalTitle');
+    
+    // 重置按钮状态
+    saveAuthBtn.style.display = 'none';
+    saveAuthBtn.style.visibility = 'hidden';
+    saveAuthBtn.style.opacity = '0';
+    removeAuthBtn.style.display = 'none';
+    removeAuthBtn.style.visibility = 'hidden';
+    removeAuthBtn.style.opacity = '0';
+    
+    // 设置授权内容
+        authContent.innerHTML = `
+            <div class="form-group">
+                <label>授权有效期：</label>
+                <div class="radio-group">
+                    <div class="radio-item">
+                        <input type="radio" id="permanentRadio" name="validityType" value="permanent" checked>
+                        <label for="permanentRadio">永久有效</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" id="temporaryRadio" name="validityType" value="temporary">
+                        <label for="temporaryRadio">设置有效期</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group date-range" id="dateRangeGroup" style="display: none;">
+                <div class="date-input">
+                    <label>开始日期：</label>
+                    <input type="date" id="startDate">
+                </div>
+                <div class="date-input">
+                    <label>结束日期：</label>
+                    <input type="date" id="endDate">
+                </div>
+            </div>
+        `;
+        
+        // 添加单选按钮事件监听器
+        document.getElementById('permanentRadio').addEventListener('change', function() {
+            if (this.checked) {
+                document.getElementById('dateRangeGroup').style.display = 'none';
+            }
+        });
+        
+        document.getElementById('temporaryRadio').addEventListener('change', function() {
+            if (this.checked) {
+                document.getElementById('dateRangeGroup').style.display = 'flex';
+            }
+        });
+        
+        // 重新获取元素引用
+        dateRangeGroup = document.getElementById('dateRangeGroup');
+        startDateInput = document.getElementById('startDate');
+        endDateInput = document.getElementById('endDate');
+        permanentRadio = document.getElementById('permanentRadio');
+        temporaryRadio = document.getElementById('temporaryRadio');
+        
+        if (mode === 'add') {
+            // 新增授权
+            authModalTitle.textContent = '新增授权';
+            
+            // 默认选择永久有效
+            permanentRadio.checked = true;
+            temporaryRadio.checked = false;
+            dateRangeGroup.style.display = 'none';
+            
+            // 清空日期输入框的值
+            startDateInput.value = '';
+            endDateInput.value = '';
+            
+            // 只显示确定按钮
+            saveAuthBtn.style.display = 'inline-block';
+            saveAuthBtn.style.visibility = 'visible';
+            saveAuthBtn.style.opacity = '1';
+            removeAuthBtn.style.display = 'none';
+            removeAuthBtn.style.visibility = 'hidden';
+            removeAuthBtn.style.opacity = '0';
+        } else if (mode === 'edit') {
+            // 编辑授权
+            authModalTitle.textContent = '编辑授权';
+            
+            // 设置有效期选项
+            if (resource.validity.type === 'permanent') {
+                permanentRadio.checked = true;
+                temporaryRadio.checked = false;
+                dateRangeGroup.style.display = 'none';
+                // 清空日期输入框的值
+                startDateInput.value = '';
+                endDateInput.value = '';
+            } else {
+                permanentRadio.checked = false;
+                temporaryRadio.checked = true;
+                dateRangeGroup.style.display = 'flex';
+                startDateInput.value = resource.validity.startDate;
+                endDateInput.value = resource.validity.endDate;
+            }
+            
+            // 只显示确定按钮，隐藏取消授权按钮
+            saveAuthBtn.style.display = 'inline-block';
+            saveAuthBtn.style.visibility = 'visible';
+            saveAuthBtn.style.opacity = '1';
+            removeAuthBtn.style.display = 'none';
+            removeAuthBtn.style.visibility = 'hidden';
+            removeAuthBtn.style.opacity = '0';
+            
+            // 不在这里调用 updateBatchActionButton()，避免在没有复选框选中时错误显示批量授权按钮
+        }
     
     // 显示弹窗
     authSettingsModal.style.display = 'flex';
@@ -1167,30 +1819,128 @@ function closeModal() {
         currentSaveBtn.parentNode.replaceChild(newSaveBtn, currentSaveBtn);
         newSaveBtn.addEventListener('click', saveAuthSettings);
     }
+    
+    // 检查是否有选中的复选框，只有在有选中的复选框时才更新批量授权按钮
+    const checkedBoxes = document.querySelectorAll('.app-checkbox:checked');
+    if (checkedBoxes.length > 0) {
+        updateBatchActionButton();
+    }
 }
 
 // 保存授权设置
 // 清除日期输入框的错误状态
 function clearDateInputErrors() {
-    startDateInput.classList.remove('error');
-    endDateInput.classList.remove('error');
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    if (startDateInput) startDateInput.classList.remove('error');
+    if (endDateInput) endDateInput.classList.remove('error');
+    const startDateError = document.getElementById('startDateError');
+    const endDateError = document.getElementById('endDateError');
+    if (startDateError) startDateError.textContent = '';
+    if (endDateError) endDateError.textContent = '';
+}
+
+// 清除批量日期输入框的错误状态
+function clearBatchDateInputErrors() {
+    const batchStartDate = document.getElementById('batchStartDate');
+    const batchEndDate = document.getElementById('batchEndDate');
+    batchStartDate.classList.remove('error');
+    batchEndDate.classList.remove('error');
+    document.getElementById('batchStartDateError').textContent = '';
+    document.getElementById('batchEndDateError').textContent = '';
+}
+
+// 批量日期输入框实时验证
+function validateBatchDateInputsRealTime() {
+    // 清除错误状态
+    clearBatchDateInputErrors();
+    
+    const temporaryRadio = document.getElementById('batchTemporaryRadio');
+    const startDateInput = document.getElementById('batchStartDate');
+    const endDateInput = document.getElementById('batchEndDate');
+    
+    if (temporaryRadio.checked) {
+        // 验证开始日期不能晚于结束日期
+        if (startDateInput.value && endDateInput.value && startDateInput.value > endDateInput.value) {
+            startDateInput.classList.add('error');
+            endDateInput.classList.add('error');
+            document.getElementById('batchStartDateError').textContent = '开始日期不能晚于结束日期';
+        }
+        
+        // 验证日期不能是过去的日期
+        const today = new Date().toISOString().split('T')[0];
+        
+        if (startDateInput.value && startDateInput.value < today) {
+            startDateInput.classList.add('error');
+            document.getElementById('batchStartDateError').textContent = '开始日期不能早于今天';
+        }
+        
+        if (endDateInput.value && endDateInput.value < today) {
+            endDateInput.classList.add('error');
+            document.getElementById('batchEndDateError').textContent = '结束日期不能早于今天';
+        }
+    }
+}
+
+// 实时验证日期输入
+function validateDateInputsRealTime() {
+    // 清除错误状态
+    clearDateInputErrors();
+    
+    const temporaryRadio = document.getElementById('temporaryRadio');
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    
+    if (temporaryRadio && temporaryRadio.checked && startDateInput && endDateInput) {
+        // 验证开始日期不能晚于结束日期
+        if (startDateInput.value && endDateInput.value && startDateInput.value > endDateInput.value) {
+            startDateInput.classList.add('error');
+            endDateInput.classList.add('error');
+            document.getElementById('startDateError').textContent = '开始日期不能晚于结束日期';
+        }
+        
+        // 验证日期不能是过去的日期（编辑模式下允许保留原有日期）
+        const today = new Date().toISOString().split('T')[0];
+        
+        // 开始日期校验：新增模式或编辑模式下修改了日期才校验
+        if (startDateInput.value && startDateInput.value < today) {
+            if (currentEditingMode === 'add' || startDateInput.value !== originalStartDate) {
+                startDateInput.classList.add('error');
+                document.getElementById('startDateError').textContent = '开始日期不能早于今天';
+            }
+        }
+        
+        // 结束日期校验：新增模式或编辑模式下修改了日期才校验
+        if (endDateInput.value && endDateInput.value < today) {
+            if (currentEditingMode === 'add' || endDateInput.value !== originalEndDate) {
+                endDateInput.classList.add('error');
+                document.getElementById('endDateError').textContent = '结束日期不能早于今天';
+            }
+        }
+    }
 }
 
 // 验证日期输入并显示视觉提示
 function validateDateInputs() {
     clearDateInputErrors();
     
+    const temporaryRadio = document.getElementById('temporaryRadio');
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    
     let isValid = true;
     
     // 验证日期输入
-    if (temporaryRadio.checked) {
+    if (temporaryRadio && temporaryRadio.checked && startDateInput && endDateInput) {
         if (!startDateInput.value) {
             startDateInput.classList.add('error');
+            document.getElementById('startDateError').textContent = '请选择开始日期';
             isValid = false;
         }
         
         if (!endDateInput.value) {
             endDateInput.classList.add('error');
+            document.getElementById('endDateError').textContent = '请选择结束日期';
             isValid = false;
         }
         
@@ -1198,7 +1948,29 @@ function validateDateInputs() {
         if (startDateInput.value && endDateInput.value && startDateInput.value > endDateInput.value) {
             startDateInput.classList.add('error');
             endDateInput.classList.add('error');
+            document.getElementById('startDateError').textContent = '开始日期不能晚于结束日期';
             isValid = false;
+        }
+        
+        // 验证日期不能是过去的日期（编辑模式下允许保留原有日期）
+        const today = new Date().toISOString().split('T')[0];
+        
+        // 开始日期校验：新增模式或编辑模式下修改了日期才校验
+        if (startDateInput.value && startDateInput.value < today) {
+            if (currentEditingMode === 'add' || startDateInput.value !== originalStartDate) {
+                startDateInput.classList.add('error');
+                document.getElementById('startDateError').textContent = '开始日期不能早于今天';
+                isValid = false;
+            }
+        }
+        
+        // 结束日期校验：新增模式或编辑模式下修改了日期才校验
+        if (endDateInput.value && endDateInput.value < today) {
+            if (currentEditingMode === 'add' || endDateInput.value !== originalEndDate) {
+                endDateInput.classList.add('error');
+                document.getElementById('endDateError').textContent = '结束日期不能早于今天';
+                isValid = false;
+            }
         }
     }
     
@@ -1211,40 +1983,48 @@ function saveAuthSettings() {
     const resourceIndex = resourcesData.findIndex(item => item.id === currentEditingId);
     if (resourceIndex === -1) return;
     
-    // 检查授权开关状态
-    if (!authEnableToggle.checked) {
-        // 如果授权开关关闭，则设置为无授权状态
+    const permanentRadio = document.getElementById('permanentRadio');
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    
+    // 根据选择的有效期类型设置
+    if (permanentRadio && permanentRadio.checked) {
         resourcesData[resourceIndex].validity = {
-            type: 'none',
+            type: 'permanent',
             startDate: null,
             endDate: null
         };
     } else {
-        // 如果授权开关打开，则根据选择的有效期类型设置
-        if (permanentRadio.checked) {
-            resourcesData[resourceIndex].validity = {
-                type: 'permanent',
-                startDate: null,
-                endDate: null
-            };
-        } else {
-            // 验证日期输入
-            if (!validateDateInputs()) {
-                // 如果验证失败，显示提示信息
-                if (!startDateInput.value || !endDateInput.value) {
-                    alert('请同时设置开始日期和结束日期');
-                } else if (startDateInput.value > endDateInput.value) {
-                    alert('开始日期不能晚于结束日期');
-                }
-                return;
+        // 验证日期输入
+        if (!validateDateInputs()) {
+            // 如果验证失败，显示提示信息
+            if (startDateInput && endDateInput && (!startDateInput.value || !endDateInput.value)) {
+                showToast('请同时设置开始日期和结束日期', 'error');
+            } else if (startDateInput && endDateInput && startDateInput.value > endDateInput.value) {
+                // 添加红色闪烁效果
+                startDateInput.classList.remove('flash-error');
+                endDateInput.classList.remove('flash-error');
+                setTimeout(() => {
+                    startDateInput.classList.add('flash-error');
+                    endDateInput.classList.add('flash-error');
+                }, 10);
+                
+                // 3秒后移除闪烁效果
+                setTimeout(() => {
+                    startDateInput.classList.remove('flash-error');
+                    endDateInput.classList.remove('flash-error');
+                }, 2000);
+                
+                showToast('开始日期不能晚于结束日期', 'error');
             }
-            
-            resourcesData[resourceIndex].validity = {
-                type: 'temporary',
-                startDate: startDateInput.value,
-                endDate: endDateInput.value
-            };
+            return;
         }
+        
+        resourcesData[resourceIndex].validity = {
+            type: 'temporary',
+            startDate: startDateInput ? startDateInput.value : null,
+            endDate: endDateInput ? endDateInput.value : null
+        };
     }
     
     // 重新渲染表格
@@ -1256,8 +2036,35 @@ function saveAuthSettings() {
     // 关闭弹窗
     closeModal();
     
-    // 显示成功提示（可以添加一个toast提示）
-    alert('授权设置已保存');
+    // 显示成功提示
+    showToast('授权设置修改成功', 'success');
+}
+
+// 取消授权
+function removeAuth() {
+    if (currentEditingId === null) return;
+    
+    const resourceIndex = resourcesData.findIndex(item => item.id === currentEditingId);
+    if (resourceIndex === -1) return;
+    
+    // 设置为无授权状态
+    resourcesData[resourceIndex].validity = {
+        type: 'none',
+        startDate: null,
+        endDate: null
+    };
+    
+    // 重新渲染表格
+    renderResourceTable(resourceSearch.value, currentAppType);
+    
+    // 更新自己的标签页显示的授权数量
+    updateSelfTabAuthCount();
+    
+    // 关闭取消授权弹窗
+    closeRemoveAuthModal();
+    
+    // 显示成功提示
+    showToast('已取消授权', 'success');
 }
 
 // 更新已授权显示的授权数量
@@ -1798,12 +2605,12 @@ function toggleInheritOrganizationAuth() {
         // 更新按钮状态
         if (isInheritingNew) {
             inheritBtn.classList.add('active');
-            inheritBtn.textContent = '组织机构授权管理';
+            inheritBtn.textContent = '组织机构授权排除';
             // 实现继承组织机构授权的逻辑
             console.log('已设置为继承组织机构授权，排除用户数量：', inheritExceptionUsers.length);
         } else {
             inheritBtn.classList.remove('active');
-            inheritBtn.textContent = '组织机构授权管理';
+            inheritBtn.textContent = '组织机构授权排除';
             // 实现不继承组织机构授权的逻辑
             console.log('已设置为不继承组织机构授权');
             // 清空排除用户列表
@@ -1829,6 +2636,9 @@ function closeOtherAuthDrawer() {
 
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', function() {
+    // 初始化DOM元素引用
+    initDOMReferences();
+    
     // 初始化页面
     initPage();
     
@@ -1836,6 +2646,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const closeOtherAuthDrawerBtn = document.getElementById('closeOtherAuthDrawer');
     if (closeOtherAuthDrawerBtn) {
         closeOtherAuthDrawerBtn.addEventListener('click', closeOtherAuthDrawer);
+    }
+    
+    // 绑定取消授权弹窗的事件
+    const closeRemoveAuthModalBtn = document.getElementById('closeRemoveAuthModal');
+    const cancelRemoveAuthBtn = document.getElementById('cancelRemoveAuthBtn');
+    const confirmRemoveAuthBtn = document.getElementById('confirmRemoveAuthBtn');
+    
+    if (closeRemoveAuthModalBtn) {
+        closeRemoveAuthModalBtn.addEventListener('click', closeRemoveAuthModal);
+    }
+    
+    if (cancelRemoveAuthBtn) {
+        cancelRemoveAuthBtn.addEventListener('click', closeRemoveAuthModal);
+    }
+    
+    if (confirmRemoveAuthBtn) {
+        confirmRemoveAuthBtn.addEventListener('click', removeAuth);
     }
     
     // 点击抽屉式弹窗外部区域关闭弹窗
@@ -1852,6 +2679,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const saveAuthBtn = document.getElementById('saveAuthBtn');
     if (saveAuthBtn) {
         saveAuthBtn.addEventListener('click', saveAuthSettings);
+        // 确保按钮样式正确
+        saveAuthBtn.style.display = 'inline-block';
+        saveAuthBtn.style.visibility = 'visible';
+        saveAuthBtn.style.opacity = '1';
+        console.log('初始化确定按钮样式:', saveAuthBtn.style.display, saveAuthBtn.style.visibility, saveAuthBtn.style.opacity);
+    }
+    
+    // 确保取消授权按钮绑定了正确的事件处理程序
+    const removeAuthBtn = document.getElementById('removeAuthBtn');
+    if (removeAuthBtn) {
+        removeAuthBtn.addEventListener('click', removeAuth);
     }
     
     // 绑定添加用户弹窗的事件

@@ -20,7 +20,7 @@
                 <button id="helpBtn" class="icon-btn">i</button>
             </div>
             <div class="header-right">
-                <button id="inheritBtn" class="text-btn">组织机构授权管理</button>
+                <button id="inheritBtn" class="text-btn">组织机构授权排除</button>
                 <button id="settingsBtn" class="text-btn">未授权文案自定义</button>
                 <button id="exportBtn" class="text-btn">应用授权汇总查询</button>
             </div>
@@ -120,8 +120,10 @@
 
                 <div class="pagination">
                     <div class="pagination-left">
-                        <button id="addAuthBtn" class="primary-btn">批量授权设置</button>
-                    </div>
+                    <button id="batchAuthBtn" class="primary-btn" style="display: none;">批量授权</button>
+                    <button id="batchRemoveAuthBtn" class="danger-btn" style="display: none;">批量取消授权</button>
+    
+                </div>
                     <div class="page-controls">
                         <span class="total-count">共 30 条</span>
                         <button class="page-btn active">1</button>
@@ -137,20 +139,14 @@
     <div class="modal" id="authSettingsModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>授权设置</h2>
+                <h2 id="authModalTitle">授权设置</h2>
                 <button class="close-btn" id="closeAuthModal">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <div class="switch-container">
-                        <label class="switch-label">启用授权</label>
-                        <label class="switch">
-                            <input type="checkbox" id="authEnableToggle">
-                            <span class="slider round"></span>
-                        </label>
+                <div id="authSettingsContent">
+                    <div class="auth-type-indicator" id="authTypeIndicator">
+                        <span class="auth-type-badge" id="authTypeBadge">新增授权</span>
                     </div>
-                </div>
-                <div id="authSettingsContent" style="display: none;">
                     <div class="form-group">
                         <label>授权有效期：</label>
                         <div class="radio-group">
@@ -168,10 +164,12 @@
                     <div class="date-input">
                         <label>开始日期：</label>
                         <input type="date" id="startDate">
+                        <div class="error-message" id="startDateError"></div>
                     </div>
                     <div class="date-input">
                         <label>结束日期：</label>
                         <input type="date" id="endDate">
+                        <div class="error-message" id="endDateError"></div>
                     </div>
                 </div>
                 </div>
@@ -179,6 +177,65 @@
             <div class="modal-footer">
                 <button class="secondary-btn" id="cancelAuthBtn">取消</button>
                 <button class="primary-btn" id="saveAuthBtn">确定</button>
+                <button class="danger-btn" id="removeAuthBtn">取消授权</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 取消授权确认弹窗 -->
+    <div class="modal" id="removeAuthModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>取消授权</h2>
+                <span class="close-btn" id="closeRemoveAuthModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="confirm-text">确定要取消此资源的授权吗？</div>
+            </div>
+            <div class="modal-footer">
+                <button class="secondary-btn" id="cancelRemoveAuthBtn">取消</button>
+                <button class="danger-btn" id="confirmRemoveAuthBtn">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 批量授权设置弹窗 -->    
+    <div class="modal" id="batchAuthSettingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>批量授权</h2>
+                <span class="close-btn" id="closeBatchAuthModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>授权有效期：</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" id="batchPermanentRadio" name="batchValidityType" value="permanent" checked>
+                            <label for="batchPermanentRadio">永久有效</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="batchTemporaryRadio" name="batchValidityType" value="temporary">
+                            <label for="batchTemporaryRadio">设置有效期</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group date-range" id="batchDateRangeGroup" style="display: none;">
+                    <div class="date-input">
+                        <label>开始日期：</label>
+                        <input type="date" id="batchStartDate">
+                        <div class="error-message" id="batchStartDateError"></div>
+                    </div>
+                    <div class="date-input">
+                        <label>结束日期：</label>
+                        <input type="date" id="batchEndDate">
+                        <div class="error-message" id="batchEndDateError"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="secondary-btn" id="cancelBatchAuthBtn">取消</button>
+                <button class="primary-btn" id="saveBatchAuthBtn">确定</button>
             </div>
         </div>
     </div>
@@ -187,17 +244,17 @@
     <div class="modal" id="inheritSettingsModal">
         <div class="modal-content inherit-modal-content">
             <div class="modal-header">
-                <h2>组织机构授权管理</h2>
+                <h2>组织机构授权排除</h2>
                 <span class="close-btn" id="closeInheritModal">&times;</span>
             </div>
             <div class="modal-body">
                 <div class="inherit-warning" id="inheritWarning">
                     <span class="info-icon">i</span>
-                    <p>启用排除名单后，名单中的用户将不再自动获得组织机构的授权，但用户组的授权不受影响。您需要单独为这些用户设置授权。</p>
+                    <p>启用"用户排除名单"时，名单中的用户不随组织机构获得授权。<br>被排除的用户仍可通过【用户组】进行批量授权，或者单独授权。</p>
                 </div>
                 <div class="form-group">
                     <div class="switch-container">
-                        <label class="switch-label">启用授权排除名单</label>
+                        <label class="switch-label">用户排除名单</label>
                         <label class="switch">
                             <input type="checkbox" id="inheritToggle">
                             <span class="slider round"></span>
@@ -208,7 +265,7 @@
                 <!-- 用户列表部分 -->
                 <div class="user-list-container" id="userListContainer" style="display: none;">
                     <div class="user-list-header">
-                        <h3>授权排除名单</h3>
+                        <h3>用户排除名单</h3>
                         <button class="add-user-btn" id="addUserBtn">添加用户</button>
                     </div>
                     <div class="user-list" id="exceptionUserList">
@@ -227,7 +284,7 @@
 <div id="addUserModal" class="modal">
     <div class="modal-content modal-content-wide">
         <div class="modal-header">
-            <h2>添加授权排除名单用户</h2>
+            <h2>添加用户</h2>
             <span id="closeAddUserModal" class="close-btn">&times;</span>
         </div>
         <div class="modal-body">

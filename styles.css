@@ -311,24 +311,7 @@ header {
     margin-left: 10px;
 }
 
-#addAuthBtn {
-    background-color: #1890ff;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-}
-
-#addAuthBtn:active {
-    transform: scale(0.98);
-    background-color: #096dd9;
-}
-
 .primary-btn:hover {
-    background-color: #40a9ff;
-}
-
-#addAuthBtn:hover {
     background-color: #40a9ff;
 }
 
@@ -363,13 +346,15 @@ header {
     text-align: left;
 }
 .action-column .settings-btn,
-.action-column .view-other-auth-btn {
-    margin-right: 8px;
+.action-column .view-other-auth-btn,
+.action-column .action-link {
+    margin-right: 15px;
     vertical-align: middle;
     line-height: 1.5;
 }
 
-.view-other-auth-btn {
+.view-other-auth-btn,
+.action-link {
     color: #1890ff;
     background: none;
     border: none;
@@ -381,10 +366,25 @@ header {
     vertical-align: middle;
 }
 
-.view-other-auth-btn[disabled] {
-    color: #999;
+.add-auth-btn {
+    color: #1890ff;
+}
+
+.edit-auth-btn {
+    color: #1890ff;
+}
+
+.remove-auth-btn {
+    color: #666;
+}
+
+.view-other-auth-btn[disabled],
+.view-other-auth-btn.disabled,
+.action-link.disabled {
+    color: #999 !important;
     cursor: not-allowed;
-    text-decoration: underline;
+    text-decoration: none;
+    pointer-events: none;
 }
 
 .resource-table table {
@@ -531,7 +531,6 @@ tr:hover {
     z-index: 1000;
     justify-content: center;
     align-items: center;
-    align-items: center;
 }
 
 /* 批量授权标题样式 */
@@ -554,6 +553,25 @@ tr:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     max-height: 90vh;
     overflow-y: auto;
+}
+
+/* 授权类型标签样式 */
+.auth-type-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 10px;
+    color: white;
+}
+
+.auth-type-badge.new {
+    background-color: #4CAF50; /* 绿色 */
+}
+
+.auth-type-badge.edit {
+    background-color: #2196F3; /* 蓝色 */
 }
 
 .inherit-modal-content {
@@ -589,6 +607,9 @@ tr:hover {
     padding: 10px 24px;
     border-top: 1px solid #e8e8e8;
     text-align: right;
+    display: flex !important;
+    justify-content: flex-end !important;
+    gap: 10px;
 }
 
 .primary-btn {
@@ -614,10 +635,23 @@ tr:hover {
     cursor: pointer;
 }
 
+.danger-btn {
+    padding: 8px 16px;
+    background-color: #fff1f0;
+    color: #ff4d4f;
+    border: 1px solid #ffccc7;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.danger-btn:hover {
+    background-color: #fff7f6;
+    border-color: #ff7875;
+}
+
 
 /* 抽屉式弹窗样式 */
 .drawer-modal {
-    display: none;
     position: fixed;
     top: 0;
     right: 0;
@@ -626,13 +660,18 @@ tr:hover {
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
     z-index: 1000;
+    display: flex;
     justify-content: flex-end;
     align-items: stretch;
+    visibility: hidden;
+    opacity: 0;
+    transition: visibility 0s linear 0.3s, opacity 0.3s ease-in-out;
 }
 
 .drawer-modal.active {
-    display: flex;
-    animation: fadeIn 0.3s ease-in-out;
+    visibility: visible;
+    opacity: 1;
+    transition: visibility 0s linear 0s, opacity 0.3s ease-in-out;
 }
 
 .drawer-content {
@@ -728,7 +767,7 @@ tr:hover {
     color: #6598FC;
     font-size: 14px;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
 }
 
 .info-icon {
@@ -1213,10 +1252,27 @@ input:checked + .slider:before {
     animation: shake 0.5s;
 }
 
+.error-message {
+    color: #f5222d;
+    font-size: 12px;
+    margin-top: 4px;
+    min-height: 16px;
+    line-height: 16px;
+}
+
 @keyframes shake {
     0%, 100% { transform: translateX(0); }
     10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
     20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+@keyframes flashRed {
+    0%, 100% { background-color: #fff1f0; border-color: #f5222d; }
+    50% { background-color: #ffccc7; border-color: #ff4d4f; }
+}
+
+.date-input input.flash-error {
+    animation: flashRed 0.6s ease-in-out 3;
 }
 
 /* 有效期标签样式 */
