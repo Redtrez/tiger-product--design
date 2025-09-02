@@ -1,6 +1,17 @@
 // 当前编辑的资源
 let currentEditingResource = null;
 
+// 获取Toast图标的辅助函数
+function getToastIcon(type) {
+    switch(type) {
+        case 'success': return '✓';
+        case 'error': return '✕';
+        case 'warning': return '⚠';
+        case 'info': return 'ℹ';
+        default: return 'ℹ';
+    }
+}
+
 // Toast提示函数
 function showToast(message, type = 'info') {
     // 创建toast容器（如果不存在）
@@ -29,6 +40,23 @@ function showToast(message, type = 'info') {
         align-items: center;
         justify-content: space-between;
         width: 100%;
+    `;
+    
+    // 创建图标元素
+    const iconSpan = document.createElement('span');
+    iconSpan.textContent = getToastIcon(type);
+    iconSpan.style.cssText = `
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+        color: white;
+        margin-right: 12px;
+        flex-shrink: 0;
     `;
     
     // 创建消息文本
@@ -71,6 +99,7 @@ function showToast(message, type = 'info') {
     });
     
     // 组装toast内容
+    toastContent.appendChild(iconSpan);
     toastContent.appendChild(messageSpan);
     toastContent.appendChild(closeBtn);
     toast.appendChild(toastContent);
@@ -94,21 +123,27 @@ function showToast(message, type = 'info') {
     `;
     
     let typeStyles = '';
+    let iconBgColor = '';
     switch(type) {
         case 'success':
             typeStyles = 'color: #52c41a; border-left: 4px solid #52c41a;';
+            iconBgColor = '#52c41a';
             break;
         case 'error':
             typeStyles = 'color: #ff4d4f; border-left: 4px solid #ff4d4f;';
+            iconBgColor = '#ff4d4f';
             break;
         case 'warning':
             typeStyles = 'color: #faad14; border-left: 4px solid #faad14;';
+            iconBgColor = '#faad14';
             break;
         default:
             typeStyles = 'color: #1890ff; border-left: 4px solid #1890ff;';
+            iconBgColor = '#1890ff';
     }
     
     toast.style.cssText = baseStyles + typeStyles;
+    iconSpan.style.backgroundColor = iconBgColor;
     
     // 添加到容器
     toastContainer.appendChild(toast);
@@ -181,7 +216,7 @@ const resourcesData = [
         url: 'future-single.tiger-sec.cn',
         validity: {
             type: 'temporary',
-            startDate: '2025-09-01',
+            startDate: '2025-09-15',
             endDate: '2026-12-31'
         },
         otherAuth: null
@@ -252,7 +287,7 @@ const resourcesData = [
         validity: {
             type: 'temporary',
             periods: [
-                { startDate: '2025-09-01', endDate: '2025-12-31' },
+                { startDate: '2025-09-15', endDate: '2025-12-31' },
                 { startDate: '2026-02-01', endDate: '2026-04-30' }
             ]
         },
@@ -271,7 +306,8 @@ const resourcesData = [
         validity: {
             type: 'temporary',
             periods: [
-                { startDate: '2025-01-01', endDate: new Date(new Date().getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] }
+                { startDate: '2025-01-01', endDate: new Date(new Date().getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
+                { startDate: '2025-06-01', endDate: '2025-08-31' }
             ]
         },
         otherAuth: {
@@ -310,7 +346,7 @@ const resourcesData = [
             type: 'temporary',
             periods: [
                 { startDate: '2025-01-01', endDate: '2025-07-31' },
-                { startDate: '2025-09-01', endDate: '2026-02-28' }
+                { startDate: '2025-09-10', endDate: '2026-02-28' }
             ]
         },
         otherAuth: {
@@ -380,7 +416,7 @@ const resourcesData = [
         url: 'future.tiger-sec.cn',
         validity: {
             type: 'temporary',
-            startDate: '2025-01-01',
+            startDate: '2025-10-01',
             endDate: '2025-12-31'
         }
     },
@@ -468,7 +504,20 @@ const resourcesData = [
             startDate: '2023-11-15',
             endDate: '2024-02-15'
         }
-    }
+    },
+    {
+        id: 999,
+        icon: '测',
+        iconColor: 'green',
+        name: '测试假数据-验证显示功能',
+        url: 'test-fake-data.example.com',
+        validity: {
+            type: 'permanent',
+            startDate: null,
+            endDate: null
+        },
+        otherAuth: null
+     }
 ];
 
 // DOM元素
@@ -759,17 +808,7 @@ function batchAuthorize() {
                     isValid = false;
                 }
                 
-                if (startDateInput.value < today) {
-                    startDateInput.classList.add('error');
-                    document.getElementById('batchStartDateError').textContent = '开始日期不能早于今天';
-                    isValid = false;
-                }
-                
-                if (endDateInput.value < today) {
-                    endDateInput.classList.add('error');
-                    document.getElementById('batchEndDateError').textContent = '结束日期不能早于今天';
-                    isValid = false;
-                }
+
             }
         }
         
@@ -816,11 +855,8 @@ function batchAuthorize() {
         // 重新渲染表格
         renderResourceTable(resourceSearch.value, currentAppType);
         
-        // 更新授权数量
-        updateAuthCount();
-        
         // 显示成功提示
-        showToast('授权设置修改成功', 'success');
+        showToast('批量授权成功', 'success');
     }
 }
 
@@ -889,7 +925,7 @@ function batchRemoveAuthorize() {
                     updateBatchActionButton();
                     
                     // 显示成功提示
-                    showToast('授权设置修改成功', 'success');
+                    showToast('批量取消授权成功', 'success');
                 });
             }
         }
@@ -1007,10 +1043,9 @@ function updateTreeView(tabType) {
 function renderResourceTable(searchTerm = '', appType = 'web') {
     // 确保resourceTableBody存在
     if (!resourceTableBody) {
-        console.error('resourceTableBody元素不存在，尝试重新获取');
         resourceTableBody = ensureElement('resourceTableBody');
         if (!resourceTableBody) {
-            return; // 如果仍然不存在，则退出函数
+            return;
         }
     }
     
@@ -1040,31 +1075,22 @@ function renderResourceTable(searchTerm = '', appType = 'web') {
     let filteredData = [];
     
     // 根据应用类型过滤
-    // 这里只是简单的实现，实际应用中可能需要更复杂的逻辑
     if (appType === 'web') {
-        // 在web应用页面中显示12条数据：单个授权放在前6个，组合授权放在后6个
-        filteredData = [
-            // 单个授权（前6个）
-            resourcesData[0], // ID 1 - 未授权
-            resourcesData[1], // ID 2 - 单时间段-未生效
-            resourcesData[2], // ID 3 - 单时间段-即将到期
-            resourcesData[3], // ID 4 - 单时间段-临时授权
-            resourcesData[4], // ID 5 - 单时间段-已过期
-            resourcesData[5], // ID 6 - 单时间段-永久生效
-            // 组合授权（后6个）
-            resourcesData[6], // ID 7 - 组合授权-未生效
-            resourcesData[7], // ID 8 - 组合授权-即将到期
-            resourcesData[8], // ID 9 - 组合授权-临时授权
-            resourcesData[9], // ID 10 - 组合授权-空窗期
-            resourcesData[10], // ID 11 - 组合授权-已过期
-            resourcesData[11], // ID 12 - 组合授权-永久生效
-        ]
+        // 在web应用页面中显示前12条数据
+        filteredData = resourcesData.slice(0, 12).filter(item => item !== undefined);
     } else if (appType === 'tunnel') {
         // 隧道应用显示部分授权数据
-        filteredData = [resourcesData[3], resourcesData[5], resourcesData[8]]; // 临时授权、永久授权和组合临时授权
+        filteredData = resourcesData.filter(item => 
+            item && (item.name.includes('临时授权') || item.name.includes('永久') || item.icon === '组')
+        ).slice(0, 5);
     } else if (appType === 'group') {
         // 组应用显示组合授权数据
-        filteredData = [resourcesData[6], resourcesData[7], resourcesData[8], resourcesData[9], resourcesData[10], resourcesData[11]]; // 所有组合授权
+        filteredData = resourcesData.filter(item => 
+            item && item.icon === '组'
+        );
+    } else {
+        // 默认显示所有数据
+        filteredData = resourcesData.filter(item => item !== undefined);
     }
     
     // 根据搜索词过滤
@@ -1075,6 +1101,22 @@ function renderResourceTable(searchTerm = '', appType = 'web') {
     }
     
     // 批量操作按钮已在函数开始时隐藏
+    
+    // 处理无数据情况
+    if (filteredData.length === 0) {
+        const emptyRow = document.createElement('tr');
+        emptyRow.innerHTML = `
+            <td colspan="6" style="text-align: center; padding: 40px 20px;">
+                <div style="color: #999; margin-bottom: 16px; font-size: 14px;">暂无授权信息</div>
+                <button onclick="openAuthSettingsModal(null, 'add')" 
+                        style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                    新增授权
+                </button>
+            </td>
+        `;
+        resourceTableBody.appendChild(emptyRow);
+        return;
+    }
     
     // 渲染数据
     filteredData.forEach(resource => {
@@ -1238,8 +1280,26 @@ function renderResourceTable(searchTerm = '', appType = 'web') {
         const statusCell = document.createElement('td');
         const statusSpan = document.createElement('span');
         statusSpan.className = `validity-tag ${validityStatus}`;
-        statusSpan.title = validityText;
-        statusSpan.textContent = validityText.includes(',') ? validityText.split('(')[0] + '(多个时间段)' : validityText;
+        
+        // 分离状态文本和时间信息
+        let statusDisplayText = '';
+        let timeInfo = '';
+        
+        if (validityText.includes('(')) {
+            const parts = validityText.split('(');
+            statusDisplayText = parts[0].trim();
+            timeInfo = '(' + parts.slice(1).join('(');
+        } else {
+            statusDisplayText = validityText;
+            timeInfo = '';
+        }
+        
+        // 设置显示文本和hover提示
+        statusSpan.textContent = statusDisplayText;
+        if (timeInfo) {
+            statusSpan.title = timeInfo;
+        }
+        
         statusCell.appendChild(statusSpan);
         row.appendChild(statusCell);
         
@@ -1247,47 +1307,21 @@ function renderResourceTable(searchTerm = '', appType = 'web') {
         const actionCell = document.createElement('td');
         actionCell.className = 'action-column';
         
-        // 添加/取消授权按钮
-        const authLink = document.createElement('a');
-        authLink.href = 'javascript:void(0)';
-        if (validityStatus === 'none') {
-            authLink.className = 'add-auth-btn action-link';
-            authLink.setAttribute('data-id', resource.id);
-            authLink.textContent = '新增授权';
-        } else {
-            authLink.className = 'remove-auth-btn action-link';
-            authLink.setAttribute('data-id', resource.id);
-            authLink.textContent = '取消授权';
-        }
-        actionCell.appendChild(authLink);
-        
-        // 编辑授权按钮
-        const editLink = document.createElement('a');
-        editLink.href = 'javascript:void(0)';
-        if (validityStatus !== 'none') {
-            editLink.className = 'edit-auth-btn action-link';
-            editLink.setAttribute('data-id', resource.id);
-            editLink.textContent = '编辑授权';
-        } else {
-            editLink.className = 'edit-auth-btn action-link disabled';
-            editLink.disabled = true;
-            editLink.textContent = '编辑授权';
-        }
-        actionCell.appendChild(editLink);
-        
-        // 查看其他授权按钮
-        const viewOtherLink = document.createElement('a');
-        viewOtherLink.href = 'javascript:void(0)';
-        if (resource.otherAuth) {
-            viewOtherLink.className = 'view-other-auth-btn';
-            viewOtherLink.onclick = function() { viewOtherAuth(resource.otherAuth.id); };
-            viewOtherLink.textContent = '查看其他授权';
-        } else {
-            viewOtherLink.className = 'view-other-auth-btn disabled';
-            viewOtherLink.disabled = true;
-            viewOtherLink.textContent = '查看其他授权';
-        }
-        actionCell.appendChild(viewOtherLink);
+        // 操作按钮（编辑符号）
+        const operationBtn = document.createElement('button');
+        operationBtn.className = 'operation-btn';
+        operationBtn.setAttribute('data-id', resource.id);
+        operationBtn.innerHTML = `
+            <svg stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+        `; // 铅笔操作符号
+        operationBtn.title = '授权详情';
+        // 修复：点击操作时始终传递当前资源ID，由抽屉内部根据 otherAuth 决定展示内容，避免传递 otherAuth.id 造成空数据
+        operationBtn.onclick = function() { 
+            viewOtherAuth(resource.id);
+        };
+        actionCell.appendChild(operationBtn);
         
         row.appendChild(actionCell);
         
@@ -1451,10 +1485,9 @@ function setupEventListeners() {
         // 设置结束日期的最小值为开始日期
         endDateInput.min = this.value;
         
-        // 如果结束日期早于开始日期，则清空结束日期并提示
+        // 如果结束日期早于开始日期，则清空结束日期
         if (endDateInput.value && endDateInput.value < this.value) {
             endDateInput.value = '';
-            showToast('结束日期已清空，请重新选择', 'warning');
         }
     });
     
@@ -1645,10 +1678,10 @@ function openRemoveAuthModal(resourceId) {
     const removeAuthModal = document.getElementById('removeAuthModal');
     removeAuthModal.style.display = 'flex';
     
-    // 更新确认文本，明确表示只针对当前资源进行操作
+    // 更新确认文本
     const confirmText = document.querySelector('#removeAuthModal .confirm-text');
     if (confirmText) {
-        confirmText.textContent = `确定要取消该资源的授权吗？`;
+        confirmText.textContent = `确定要取消授权吗？`;
     }
 }
 
@@ -1867,18 +1900,7 @@ function validateBatchDateInputsRealTime() {
             document.getElementById('batchStartDateError').textContent = '开始日期不能晚于结束日期';
         }
         
-        // 验证日期不能是过去的日期
-        const today = new Date().toISOString().split('T')[0];
-        
-        if (startDateInput.value && startDateInput.value < today) {
-            startDateInput.classList.add('error');
-            document.getElementById('batchStartDateError').textContent = '开始日期不能早于今天';
-        }
-        
-        if (endDateInput.value && endDateInput.value < today) {
-            endDateInput.classList.add('error');
-            document.getElementById('batchEndDateError').textContent = '结束日期不能早于今天';
-        }
+
     }
 }
 
@@ -1902,21 +1924,7 @@ function validateDateInputsRealTime() {
         // 验证日期不能是过去的日期（编辑模式下允许保留原有日期）
         const today = new Date().toISOString().split('T')[0];
         
-        // 开始日期校验：新增模式或编辑模式下修改了日期才校验
-        if (startDateInput.value && startDateInput.value < today) {
-            if (currentEditingMode === 'add' || startDateInput.value !== originalStartDate) {
-                startDateInput.classList.add('error');
-                document.getElementById('startDateError').textContent = '开始日期不能早于今天';
-            }
-        }
-        
-        // 结束日期校验：新增模式或编辑模式下修改了日期才校验
-        if (endDateInput.value && endDateInput.value < today) {
-            if (currentEditingMode === 'add' || endDateInput.value !== originalEndDate) {
-                endDateInput.classList.add('error');
-                document.getElementById('endDateError').textContent = '结束日期不能早于今天';
-            }
-        }
+        // 日期校验逻辑已移除
     }
 }
 
@@ -1952,26 +1960,7 @@ function validateDateInputs() {
             isValid = false;
         }
         
-        // 验证日期不能是过去的日期（编辑模式下允许保留原有日期）
-        const today = new Date().toISOString().split('T')[0];
-        
-        // 开始日期校验：新增模式或编辑模式下修改了日期才校验
-        if (startDateInput.value && startDateInput.value < today) {
-            if (currentEditingMode === 'add' || startDateInput.value !== originalStartDate) {
-                startDateInput.classList.add('error');
-                document.getElementById('startDateError').textContent = '开始日期不能早于今天';
-                isValid = false;
-            }
-        }
-        
-        // 结束日期校验：新增模式或编辑模式下修改了日期才校验
-        if (endDateInput.value && endDateInput.value < today) {
-            if (currentEditingMode === 'add' || endDateInput.value !== originalEndDate) {
-                endDateInput.classList.add('error');
-                document.getElementById('endDateError').textContent = '结束日期不能早于今天';
-                isValid = false;
-            }
-        }
+        // 日期早于今天的验证逻辑已移除
     }
     
     return isValid;
@@ -1987,44 +1976,159 @@ function saveAuthSettings() {
     const startDateInput = document.getElementById('startDate');
     const endDateInput = document.getElementById('endDate');
     
-    // 根据选择的有效期类型设置
-    if (permanentRadio && permanentRadio.checked) {
-        resourcesData[resourceIndex].validity = {
-            type: 'permanent',
-            startDate: null,
-            endDate: null
-        };
-    } else {
-        // 验证日期输入
-        if (!validateDateInputs()) {
-            // 如果验证失败，显示提示信息
-            if (startDateInput && endDateInput && (!startDateInput.value || !endDateInput.value)) {
-                showToast('请同时设置开始日期和结束日期', 'error');
-            } else if (startDateInput && endDateInput && startDateInput.value > endDateInput.value) {
-                // 添加红色闪烁效果
-                startDateInput.classList.remove('flash-error');
-                endDateInput.classList.remove('flash-error');
-                setTimeout(() => {
-                    startDateInput.classList.add('flash-error');
-                    endDateInput.classList.add('flash-error');
-                }, 10);
-                
-                // 3秒后移除闪烁效果
-                setTimeout(() => {
+    if (currentEditingMode === 'add') {
+        // 新增授权模式
+        const resource = resourcesData[resourceIndex];
+        
+        if (permanentRadio && permanentRadio.checked) {
+            // 永久授权
+            if (resource.validity.type === 'unauthorized') {
+                resource.validity = {
+                    type: 'permanent',
+                    startDate: null,
+                    endDate: null
+                };
+                resource.icon = '永';
+                resource.iconColor = 'blue';
+            } else if (resource.validity.type === 'permanent') {
+                // 已经是永久授权，转换为组合授权（添加新的永久授权）
+                resource.validity = {
+                    type: 'combined',
+                    periods: [{ type: 'permanent' }, { type: 'permanent' }]
+                };
+                resource.icon = '组';
+                resource.iconColor = 'green';
+            } else if (resource.validity.type === 'temporary' && !resource.validity.periods) {
+                // 单时间段转为组合授权（包含永久）
+                const originalPeriod = {
+                    startDate: resource.validity.startDate,
+                    endDate: resource.validity.endDate
+                };
+                resource.validity = {
+                    type: 'combined',
+                    periods: [originalPeriod, { type: 'permanent' }]
+                };
+                resource.icon = '组';
+                resource.iconColor = 'green';
+            } else if (resource.validity.periods) {
+                // 已经是组合授权，添加永久授权
+                resource.validity.periods.push({ type: 'permanent' });
+                resource.validity.type = 'combined';
+                resource.iconColor = 'green';
+            }
+        } else {
+            // 临时授权
+            // 验证日期输入
+            if (!validateDateInputs()) {
+                if (startDateInput && endDateInput && (!startDateInput.value || !endDateInput.value)) {
+                    showToast('请同时设置开始日期和结束日期', 'error');
+                } else if (startDateInput && endDateInput && startDateInput.value > endDateInput.value) {
                     startDateInput.classList.remove('flash-error');
                     endDateInput.classList.remove('flash-error');
-                }, 2000);
-                
-                showToast('开始日期不能晚于结束日期', 'error');
+                    setTimeout(() => {
+                        startDateInput.classList.add('flash-error');
+                        endDateInput.classList.add('flash-error');
+                    }, 10);
+                    
+                    setTimeout(() => {
+                        startDateInput.classList.remove('flash-error');
+                        endDateInput.classList.remove('flash-error');
+                    }, 2000);
+                    
+                    showToast('开始日期不能晚于结束日期', 'error');
+                }
+                return;
             }
-            return;
+            
+            const newPeriod = {
+                startDate: startDateInput.value,
+                endDate: endDateInput.value
+            };
+            
+            if (resource.validity.type === 'unauthorized') {
+                // 未授权状态，直接设置为临时授权
+                resource.validity = {
+                    type: 'temporary',
+                    startDate: newPeriod.startDate,
+                    endDate: newPeriod.endDate
+                };
+                resource.icon = '单';
+                resource.iconColor = 'green';
+            } else if (resource.validity.type === 'permanent') {
+                // 永久授权转为组合授权（包含临时）
+                resource.validity = {
+                    type: 'combined',
+                    periods: [{ type: 'permanent' }, newPeriod]
+                };
+                resource.icon = '组';
+                resource.iconColor = 'green';
+            } else if (resource.validity.type === 'temporary' && !resource.validity.periods) {
+                // 单时间段授权，转换为组合授权
+                const originalPeriod = {
+                    startDate: resource.validity.startDate,
+                    endDate: resource.validity.endDate
+                };
+                resource.validity = {
+                    type: 'temporary',
+                    periods: [originalPeriod, newPeriod]
+                };
+                resource.icon = '组';
+                resource.iconColor = 'purple';
+            } else if (resource.validity.periods) {
+                // 已经是组合授权，添加新的时间段
+                resource.validity.periods.push(newPeriod);
+            }
         }
         
-        resourcesData[resourceIndex].validity = {
-            type: 'temporary',
-            startDate: startDateInput ? startDateInput.value : null,
-            endDate: endDateInput ? endDateInput.value : null
-        };
+        // 隐藏新增按钮
+        const addAuthContainer = document.getElementById('addAuthContainer');
+        if (addAuthContainer) {
+            addAuthContainer.style.display = 'none';
+        }
+        
+        // 重新加载抽屉内容
+        viewOtherAuth(currentEditingId);
+        
+        showToast('应用授权已更新', 'success');
+    } else {
+        // 编辑授权模式
+        if (permanentRadio && permanentRadio.checked) {
+            resourcesData[resourceIndex].validity = {
+                type: 'permanent',
+                startDate: null,
+                endDate: null
+            };
+        } else {
+            // 验证日期输入
+            if (!validateDateInputs()) {
+                if (startDateInput && endDateInput && (!startDateInput.value || !endDateInput.value)) {
+                    showToast('请同时设置开始日期和结束日期', 'error');
+                } else if (startDateInput && endDateInput && startDateInput.value > endDateInput.value) {
+                    startDateInput.classList.remove('flash-error');
+                    endDateInput.classList.remove('flash-error');
+                    setTimeout(() => {
+                        startDateInput.classList.add('flash-error');
+                        endDateInput.classList.add('flash-error');
+                    }, 10);
+                    
+                    setTimeout(() => {
+                        startDateInput.classList.remove('flash-error');
+                        endDateInput.classList.remove('flash-error');
+                    }, 2000);
+                    
+                    showToast('开始日期不能晚于结束日期', 'error');
+                }
+                return;
+            }
+            
+            resourcesData[resourceIndex].validity = {
+                type: 'temporary',
+                startDate: startDateInput ? startDateInput.value : null,
+                endDate: endDateInput ? endDateInput.value : null
+            };
+        }
+        
+        showToast('应用授权已更新', 'success');
     }
     
     // 重新渲染表格
@@ -2035,9 +2139,6 @@ function saveAuthSettings() {
     
     // 关闭弹窗
     closeModal();
-    
-    // 显示成功提示
-    showToast('授权设置修改成功', 'success');
 }
 
 // 取消授权
@@ -2094,54 +2195,575 @@ function updateSelfTabAuthCount() {
     document.getElementById('authCount').textContent = `已授权：${webAppCount}个Web应用，${tunnelAppCount}个隧道应用，${appGroupCount}个应用组`;
 }
 
+// 获取授权有效期显示文本的辅助函数
+function getValidityDisplayText(validity) {
+    if (validity.type === 'permanent') {
+        return '永久授权';
+    } else if (validity.type === 'temporary') {
+        if (validity.startDate && validity.endDate) {
+            return `${validity.startDate} 至 ${validity.endDate}`;
+        }
+    } else if (validity.type === 'unauthorized') {
+        return '未授权';
+    }
+    return '未知状态';
+}
+
+// 全局变量用于管理编辑状态
+let editingRowIndex = null;
+let originalRowData = null;
+let currentAuthData = [];
+let currentResourceId = null;
+
 function viewOtherAuth(authId) {
     // 获取抽屉式弹窗元素
     const otherAuthDrawer = document.getElementById('otherAuthDrawer');
     const otherAuthTableBody = document.getElementById('otherAuthTableBody');
     
+    // 重置编辑状态
+    editingRowIndex = null;
+    originalRowData = null;
+    currentResourceId = authId;
+    
     // 清空表格内容
     otherAuthTableBody.innerHTML = '';
     
-    // 添加多行授权源数据（这里使用固定的假数据）
-    const authData = [
-        {
-            appName: '程序员工具集',
-            subject: '应用组 → 所有应用组',
-            validity: '永久授权',
-            creator: '系统管理员',
-            role: '总管理员'
-        },
-        {
-            appName: '程序员工具集',
-            subject: '应用组 → 所有公司用户',
-            validity: '永久授权',
-            creator: '系统管理员',
-            role: '总管理员'
-        },
-        {
-            appName: '程序员工具集',
-            subject: '所有公司部门',
-            validity: '2023-01-01 至 2023-12-31',
-            creator: '-',
-            role: '总管理员'
-        }
-    ];
+    // 查找对应的资源数据
+    const resource = resourcesData.find(r => r.id == authId);
     
-    // 填充表格数据
-    authData.forEach(auth => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${auth.appName}</td>
-            <td>${auth.subject}</td>
-            <td>${auth.validity}</td>
-            <td>${auth.creator}</td>
-            <td>${auth.role}</td>
-        `;
-        otherAuthTableBody.appendChild(row);
-    });
+    if (resource) {
+        // 检查是否为未授权状态
+        const isUnauthorized = resource.validity.type === 'unauthorized';
+        
+        if (isUnauthorized) {
+            // 如果是未授权状态，显示空状态信息
+            currentAuthData = [];
+            // 调用renderAuthTable来正确显示新增按钮
+            renderAuthTable();
+        } else {
+            // 如果已有授权，显示当前资源的授权信息
+            const creators = ['张三', '李四', '王五', '赵六', '钱七', '孙八', '周九', '吴十'];
+            const roles = ['总管理员', '部门管理员', '项目管理员', '子管理员'];
+            
+            currentAuthData = [];
+            
+            // 检查是否为组合授权
+            if (resource.validity.type === 'combined' || resource.validity.periods) {
+                // 组合授权：显示多条授权记录
+                if (resource.validity.periods) {
+                    resource.validity.periods.forEach((period, index) => {
+                        // 第一个时间段为直接授权，其余为间接授权
+                        const authType = index === 0 ? 'direct' : 'indirect';
+                        if (period.type === 'permanent') {
+                            currentAuthData.push({
+                                appName: resource.name,
+                                subject: `${currentEntity} → ${resource.name}`,
+                                validity: '永久授权',
+                                validityType: 'permanent',
+                                startDate: null,
+                                endDate: null,
+                                creator: creators[Math.floor(Math.random() * creators.length)],
+                                role: roles[Math.floor(Math.random() * roles.length)],
+                                type: authType
+                            });
+                        } else {
+                            currentAuthData.push({
+                                appName: resource.name,
+                                subject: `${currentEntity} → ${resource.name}`,
+                                validity: `${period.startDate} 至 ${period.endDate}`,
+                                validityType: 'temporary',
+                                startDate: period.startDate,
+                                endDate: period.endDate,
+                                creator: creators[Math.floor(Math.random() * creators.length)],
+                                role: roles[Math.floor(Math.random() * roles.length)],
+                                type: authType
+                            });
+                        }
+                    });
+                }
+            } else {
+                // 单个授权：显示一条授权记录
+                const validityType = resource.validity.type;
+                // 判断是否为间接授权：如果有otherAuth属性，说明这是间接授权
+                const authType = resource.otherAuth ? 'indirect' : 'direct';
+                currentAuthData.push({
+                    appName: resource.name,
+                    subject: `${currentEntity} → ${resource.name}`,
+                    validity: getValidityDisplayText(resource.validity),
+                    validityType: validityType,
+                    startDate: resource.validity.startDate,
+                    endDate: resource.validity.endDate,
+                    creator: creators[Math.floor(Math.random() * creators.length)],
+                    role: roles[Math.floor(Math.random() * roles.length)],
+                    type: authType
+                });
+            }
+            
+            // 渲染表格
+            renderAuthTable();
+        }
+    } else {
+        // 显示空状态信息
+        currentAuthData = [];
+         const emptyRow = document.createElement('tr');
+         emptyRow.innerHTML = `
+             <td colspan="6" style="text-align: center; color: #999; padding: 20px;">
+                 暂无授权信息
+             </td>
+         `;
+        otherAuthTableBody.appendChild(emptyRow);
+    }
+    
+    // 初始化新增授权按钮事件
+    const addAuthBtn = document.getElementById('addAuthBtn');
+    if (addAuthBtn) {
+        // 移除之前的事件监听器
+        addAuthBtn.replaceWith(addAuthBtn.cloneNode(true));
+        const newAddAuthBtn = document.getElementById('addAuthBtn');
+        
+        newAddAuthBtn.addEventListener('click', function() {
+            addNewAuthRow();
+        });
+    }
     
     // 显示弹窗
     otherAuthDrawer.classList.add('active');
+}
+
+// 渲染授权表格
+function renderAuthTable() {
+    const otherAuthTableBody = document.getElementById('otherAuthTableBody');
+    otherAuthTableBody.innerHTML = '';
+    
+    // 检查是否存在直接授权
+    const hasDirectAuth = currentAuthData.some(auth => auth.type === 'direct');
+    
+
+    
+    // 当没有直接授权且没有正在编辑时，显示新增授权按钮（虚线框样式）
+    if (!hasDirectAuth && editingRowIndex === null) {
+        const addRow = document.createElement('tr');
+        addRow.className = 'add-auth-row';
+        addRow.innerHTML = `
+            <td colspan="6" class="add-auth-cell">
+                <button class="add-auth-btn" onclick="addNewAuthRow()">+ 新增授权</button>
+            </td>
+        `;
+        otherAuthTableBody.appendChild(addRow);
+    }
+    
+    currentAuthData.forEach((auth, index) => {
+        const row = document.createElement('tr');
+        row.setAttribute('data-row-index', index);
+        
+        if (editingRowIndex === index) {
+            // 编辑模式
+            row.innerHTML = `
+                <td>${auth.appName}</td>
+                <td>${auth.subject}</td>
+                <td>
+                    <div class="edit-validity-container">
+                        <div class="radio-group-inline">
+                            <label class="radio-inline">
+                                <input type="radio" name="editValidityType_${index}" value="permanent" ${auth.validityType === 'permanent' ? 'checked' : ''}>
+                                永久授权
+                            </label>
+                            <label class="radio-inline">
+                                <input type="radio" name="editValidityType_${index}" value="temporary" ${auth.validityType === 'temporary' ? 'checked' : ''}>
+                                临时授权
+                            </label>
+                        </div>
+                        <div class="date-inputs" id="editDateInputs_${index}" style="${auth.validityType === 'permanent' ? 'display: none;' : 'display: block;'}">
+                            <input type="date" id="editStartDate_${index}" value="${auth.startDate || ''}" class="date-input-small">
+                            <span>至</span>
+                            <input type="date" id="editEndDate_${index}" value="${auth.endDate || ''}" class="date-input-small">
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span class="readonly-field">${auth.creator}</span>
+                </td>
+                <td>
+                    <span class="readonly-field">${auth.role}</span>
+                </td>
+                <td>
+                    <button class="save-auth-btn" onclick="saveEditingRow(${index})" style="color: #28a745; background: none; border: none; cursor: pointer; margin-right: 8px;">保存修改</button>
+                    <button class="cancel-auth-btn" onclick="cancelEditingRow(${index})" style="color: #6c757d; background: none; border: none; cursor: pointer;">取消修改</button>
+                </td>
+            `;
+            
+            // 添加事件监听器
+            setTimeout(() => {
+                const permanentRadio = row.querySelector(`input[name="editValidityType_${index}"][value="permanent"]`);
+                const temporaryRadio = row.querySelector(`input[name="editValidityType_${index}"][value="temporary"]`);
+                const dateInputs = row.querySelector(`#editDateInputs_${index}`);
+                
+                if (permanentRadio && temporaryRadio && dateInputs) {
+                    permanentRadio.addEventListener('change', () => {
+                        if (permanentRadio.checked) {
+                            dateInputs.style.display = 'none';
+                        }
+                    });
+                    
+                    temporaryRadio.addEventListener('change', () => {
+                        if (temporaryRadio.checked) {
+                            dateInputs.style.display = 'block';
+                        }
+                    });
+                }
+            }, 0);
+        } else {
+            // 显示模式
+            row.innerHTML = `
+                <td>${auth.appName}</td>
+                <td>${auth.subject}</td>
+                <td>${auth.validity}</td>
+                <td>${auth.creator}</td>
+                <td>${auth.role}</td>
+                <td>
+                    <button class="edit-auth-btn" onclick="startEditingRow(${index})" style="color: #007bff; background: none; border: none; cursor: pointer; margin-right: 8px;">编辑有效期</button>
+                    <button class="remove-auth-btn" onclick="removeAuthRow(${index}, '${auth.type}', ${currentResourceId})" style="color: #dc3545; background: none; border: none; cursor: pointer;">取消授权</button>
+                </td>
+            `;
+        }
+        
+        otherAuthTableBody.appendChild(row);
+    });
+    
+    // 隐藏底部新增按钮（使用表格内第一行按钮代替）
+    const addAuthContainer = document.getElementById('addAuthContainer');
+    if (addAuthContainer) {
+        addAuthContainer.style.display = 'none';
+    }
+}
+
+// 开始编辑行
+function startEditingRow(index) {
+    // 如果已有其他行在编辑，先取消
+    if (editingRowIndex !== null && editingRowIndex !== index) {
+        cancelEditingRow(editingRowIndex);
+    }
+    
+    // 保存原始数据
+    originalRowData = { ...currentAuthData[index] };
+    editingRowIndex = index;
+    
+    // 重新渲染表格
+    renderAuthTable();
+}
+
+// 保存编辑的行
+function saveEditingRow(index) {
+    const row = document.querySelector(`tr[data-row-index="${index}"]`);
+    if (!row) return;
+    
+    // 获取编辑后的数据
+    const validityType = row.querySelector(`input[name="editValidityType_${index}"]:checked`)?.value;
+    const startDate = row.querySelector(`#editStartDate_${index}`)?.value;
+    const endDate = row.querySelector(`#editEndDate_${index}`)?.value;
+    
+    // 验证数据
+    if (validityType === 'temporary') {
+        if (!startDate || !endDate) {
+            showToast('请选择开始日期和结束日期', 'error');
+            return;
+        }
+        if (new Date(startDate) >= new Date(endDate)) {
+            showToast('开始日期必须早于结束日期', 'error');
+            return;
+        }
+    }
+    
+    // 更新currentAuthData中的数据
+    currentAuthData[index] = {
+        ...currentAuthData[index],
+        validityType: validityType,
+        startDate: validityType === 'permanent' ? null : startDate,
+        endDate: validityType === 'permanent' ? null : endDate,
+        validity: validityType === 'permanent' ? '永久授权' : `${startDate} 至 ${endDate}`
+    };
+    
+    // 同步更新resourcesData中的原始数据
+    const resourceIndex = resourcesData.findIndex(r => r.id == currentResourceId);
+    if (resourceIndex !== -1) {
+        const resource = resourcesData[resourceIndex];
+        const authData = currentAuthData[index];
+        
+        // 检查是否为新增授权（通过originalRowData判断）
+        const isNewAuth = originalRowData && originalRowData.appName && originalRowData.creator === '张三' && originalRowData.role === '总管理员';
+        
+        if (isNewAuth && index === 0) {
+            // 新增授权的情况
+            if (resource.validity.type === 'unauthorized') {
+                // 从未授权状态添加第一个授权
+                if (validityType === 'permanent') {
+                    resource.validity = {
+                        type: 'permanent',
+                        startDate: null,
+                        endDate: null
+                    };
+                    resource.icon = '永';
+                    resource.iconColor = 'blue';
+                } else {
+                    resource.validity = {
+                        type: 'temporary',
+                        startDate: startDate,
+                        endDate: endDate
+                    };
+                    resource.icon = '单';
+                    resource.iconColor = 'green';
+                }
+            } else if (resource.validity.type === 'permanent' || resource.validity.type === 'temporary') {
+                // 已有单个授权，转换为组合授权
+                const existingPeriod = resource.validity.type === 'permanent' 
+                    ? { type: 'permanent' }
+                    : { startDate: resource.validity.startDate, endDate: resource.validity.endDate };
+                
+                const newPeriod = validityType === 'permanent'
+                    ? { type: 'permanent' }
+                    : { startDate: startDate, endDate: endDate };
+                
+                resource.validity = {
+                    type: 'combined',
+                    periods: [newPeriod, existingPeriod]
+                };
+                resource.icon = '组';
+                resource.iconColor = 'green';
+            } else if (resource.validity.periods) {
+                // 已经是组合授权，添加新的时间段到开头
+                const newPeriod = validityType === 'permanent'
+                    ? { type: 'permanent' }
+                    : { startDate: startDate, endDate: endDate };
+                
+                resource.validity.periods.unshift(newPeriod);
+            }
+        } else {
+            // 编辑现有授权的情况
+            // 如果是直接授权（第一条记录且type为direct）
+            if (index === 0 && authData.type === 'direct') {
+                if (resource.validity.periods) {
+                    // 组合授权：更新第一个时间段
+                    if (validityType === 'permanent') {
+                        resource.validity.periods[0] = { type: 'permanent' };
+                    } else {
+                        resource.validity.periods[0] = { startDate: startDate, endDate: endDate };
+                    }
+                    
+                    // 检查是否包含永久授权，如果是则更新validity.type为combined
+                    const hasPermanent = resource.validity.periods.some(period => period.type === 'permanent');
+                    if (hasPermanent) {
+                        resource.validity.type = 'combined';
+                        resource.icon = '组';
+                        resource.iconColor = 'green';
+                    } else {
+                        // 如果没有永久授权，保持为temporary类型
+                        resource.validity.type = 'temporary';
+                        resource.icon = '组';
+                        resource.iconColor = 'blue';
+                    }
+                } else {
+                    // 单个授权：直接更新validity和图标
+                    if (validityType === 'permanent') {
+                        resource.validity = {
+                            type: 'permanent',
+                            startDate: null,
+                            endDate: null
+                        };
+                        resource.icon = '永';
+                        resource.iconColor = 'blue';
+                    } else {
+                        resource.validity = {
+                            type: 'temporary',
+                            startDate: startDate,
+                            endDate: endDate
+                        };
+                        resource.icon = '单';
+                        resource.iconColor = 'blue';
+                    }
+                }
+            } else if (authData.type === 'indirect' && resource.validity.periods) {
+                // 间接授权：更新对应的时间段（间接授权的index需要减1来对应periods数组索引）
+                const periodIndex = index - 1;
+                if (resource.validity.periods[periodIndex]) {
+                    if (validityType === 'permanent') {
+                        resource.validity.periods[periodIndex] = { type: 'permanent' };
+                    } else {
+                        resource.validity.periods[periodIndex] = { startDate: startDate, endDate: endDate };
+                    }
+                    
+                    // 检查是否包含永久授权，如果是则更新validity.type为combined
+                    const hasPermanent = resource.validity.periods.some(period => period.type === 'permanent');
+                    if (hasPermanent) {
+                        resource.validity.type = 'combined';
+                        resource.icon = '组';
+                        resource.iconColor = 'green';
+                    } else {
+                        // 如果没有永久授权，保持为temporary类型
+                        resource.validity.type = 'temporary';
+                        resource.icon = '组';
+                        resource.iconColor = 'blue';
+                    }
+                }
+            }
+        }
+        
+        // 重新渲染主表格以反映变化
+        renderResourceTable(document.getElementById('resourceSearch').value, currentAppType);
+    }
+    
+    // 重置编辑状态
+    editingRowIndex = null;
+    originalRowData = null;
+    
+    // 重新渲染表格
+    renderAuthTable();
+    
+    // 显示成功消息
+    showToast('应用授权已更新', 'success');
+}
+
+// 取消编辑行
+function cancelEditingRow(index) {
+    // 恢复原始数据
+    if (originalRowData) {
+        currentAuthData[index] = { ...originalRowData };
+    }
+    
+    // 重置编辑状态
+    editingRowIndex = null;
+    originalRowData = null;
+    
+    // 重新渲染表格
+    renderAuthTable();
+}
+
+// 添加新授权行
+function addNewAuthRow() {
+    // 如果有行正在编辑，先保存或取消
+    if (editingRowIndex !== null) {
+        if (!confirmUnsavedChanges()) {
+            return;
+        }
+    }
+    
+    // 获取当前资源信息
+    const currentResource = resourcesData.find(r => r.id == currentResourceId);
+    const appName = currentResource ? currentResource.name : '新应用';
+    
+    // 创建新的授权数据
+    const newAuth = {
+        appName: appName,
+        subject: `${currentEntity} → ${appName}`,
+        validity: '永久授权',
+        validityType: 'permanent',
+        startDate: null,
+        endDate: null,
+        creator: '张三',
+        role: '总管理员',
+        type: 'direct'
+    };
+    
+    // 添加到数据数组顶部
+    currentAuthData.unshift(newAuth);
+    
+    // 设置新行为编辑状态（第一行）
+    editingRowIndex = 0;
+    originalRowData = { ...newAuth };
+    
+    // 重新渲染表格
+    renderAuthTable();
+    
+    // 滚动到新行并聚焦第一个输入框
+    setTimeout(() => {
+        const newRow = document.querySelector(`tr[data-row-index="${editingRowIndex}"]`);
+        if (newRow) {
+            newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // 聚焦到第一个可编辑元素
+            const firstInput = newRow.querySelector('input[type="radio"]:checked');
+            if (firstInput) {
+                firstInput.focus();
+            }
+        }
+    }, 100);
+    
+    // 显示提示信息
+    showToast('已添加新授权，请编辑后保存', 'info');
+}
+
+// 确认未保存的更改
+function confirmUnsavedChanges() {
+    if (editingRowIndex === null) return true;
+    
+    const result = confirm('您做的修改尚未保存，确认退出吗？');
+    if (result) {
+        // 放弃更改
+        cancelEditingRow(editingRowIndex);
+        return true;
+    }
+    return false;
+}
+
+// 静默保存编辑行（不显示成功消息）
+function saveEditingRowSilent(index) {
+    const row = document.querySelector(`tr[data-row-index="${index}"]`);
+    if (!row) return false;
+    
+    // 获取编辑后的数据
+    const validityType = row.querySelector(`input[name="editValidityType_${index}"]:checked`)?.value;
+    const startDate = row.querySelector(`#editStartDate_${index}`)?.value;
+    const endDate = row.querySelector(`#editEndDate_${index}`)?.value;
+    
+    // 验证数据
+    if (validityType === 'temporary') {
+        if (!startDate || !endDate) {
+            return false;
+        }
+        if (new Date(startDate) >= new Date(endDate)) {
+            return false;
+        }
+    }
+    
+    // 更新数据
+    currentAuthData[index] = {
+        ...currentAuthData[index],
+        validityType: validityType,
+        startDate: validityType === 'permanent' ? null : startDate,
+        endDate: validityType === 'permanent' ? null : endDate,
+        validity: validityType === 'permanent' ? '永久授权' : `${startDate} 至 ${endDate}`
+    };
+    
+    // 重置编辑状态
+    editingRowIndex = null;
+    originalRowData = null;
+    
+    // 重新渲染表格
+    renderAuthTable();
+    
+    return true;
+}
+
+// 检查是否有未保存的更改
+function hasUnsavedChanges() {
+    return editingRowIndex !== null;
+}
+
+// 关闭抽屉前的确认
+function closeDrawerWithConfirm() {
+    if (hasUnsavedChanges()) {
+        if (!confirmUnsavedChanges()) {
+            return;
+        }
+    }
+    
+    // 关闭抽屉
+    const otherAuthDrawer = document.getElementById('otherAuthDrawer');
+    otherAuthDrawer.classList.remove('active');
+    
+    // 重置状态
+    editingRowIndex = null;
+    originalRowData = null;
+    currentAuthData = [];
+    currentResourceId = null;
 }
 
 // 切换是否继承组织机构授权
@@ -2533,49 +3155,27 @@ function checkExcludedUserStatus() {
 }
 
 function toggleInheritOrganizationAuth() {
-    // 获取当前状态
-    const inheritBtn = document.getElementById('inheritBtn');
-    const isInheriting = inheritBtn.classList.contains('active');
-    
     // 获取弹窗元素
     const inheritSettingsModal = document.getElementById('inheritSettingsModal');
-    const inheritToggle = document.getElementById('inheritToggle');
-    const inheritWarning = document.getElementById('inheritWarning');
     const closeInheritModal = document.getElementById('closeInheritModal');
     const cancelInheritBtn = document.getElementById('cancelInheritBtn');
     const saveInheritBtn = document.getElementById('saveInheritBtn');
-    const addUserBtn = document.getElementById('addUserBtn');
-    const userListContainer = document.getElementById('userListContainer');
     
-    // 根据当前状态设置开关的初始状态
-    inheritToggle.checked = isInheriting;
-    
-    // 显示或隐藏用户列表
-    if (isInheriting) {
-        userListContainer.style.display = 'block';
-    } else {
-        userListContainer.style.display = 'none';
-    }
-    
-    // 渲染用户列表
-    renderUserList();
-    
-    // 移除之前的事件监听器，避免重复绑定
-    const newInheritToggle = inheritToggle.cloneNode(true);
-    inheritToggle.parentNode.replaceChild(newInheritToggle, inheritToggle);
-    
-    // 监听开关状态变化
-    newInheritToggle.addEventListener('change', function() {
-        if (this.checked) {
-            userListContainer.style.display = 'block';
-        } else {
-            userListContainer.style.display = 'none';
-        }
-    });
+    // 初始化多选下拉框
+    initUserSelectDropdown();
     
     // 关闭弹窗的函数
     const closeInheritSettingsModal = function() {
         inheritSettingsModal.style.display = 'none';
+        // 清理下拉框状态
+        const dropdownList = document.getElementById('dropdownList');
+        if (dropdownList) {
+            dropdownList.classList.remove('active');
+        }
+        const selectInput = document.getElementById('selectInput');
+        if (selectInput) {
+            selectInput.classList.remove('active');
+        }
     };
     
     // 移除之前的事件监听器
@@ -2588,50 +3188,421 @@ function toggleInheritOrganizationAuth() {
     const newSaveBtn = saveInheritBtn.cloneNode(true);
     saveInheritBtn.parentNode.replaceChild(newSaveBtn, saveInheritBtn);
     
-    const newAddUserBtn = addUserBtn.cloneNode(true);
-    addUserBtn.parentNode.replaceChild(newAddUserBtn, addUserBtn);
-    
     // 绑定关闭按钮事件
     newCloseBtn.addEventListener('click', closeInheritSettingsModal);
     newCancelBtn.addEventListener('click', closeInheritSettingsModal);
     
-    // 绑定添加用户按钮事件
-    newAddUserBtn.addEventListener('click', openAddUserModal);
-    
     // 保存设置
     newSaveBtn.addEventListener('click', function() {
-        const isInheritingNew = newInheritToggle.checked;
-        
-        // 更新按钮状态
-        if (isInheritingNew) {
-            inheritBtn.classList.add('active');
-            inheritBtn.textContent = '组织机构授权排除';
-            // 实现继承组织机构授权的逻辑
-            console.log('已设置为继承组织机构授权，排除用户数量：', inheritExceptionUsers.length);
-        } else {
-            inheritBtn.classList.remove('active');
-            inheritBtn.textContent = '组织机构授权排除';
-            // 实现不继承组织机构授权的逻辑
-            console.log('已设置为不继承组织机构授权');
-            // 清空排除用户列表
-            inheritExceptionUsers = [];
-        }
+        // 保存当前选择的用户
+        console.log('已保存授权排除设置，排除用户数量：', inheritExceptionUsers.length);
         
         // 关闭弹窗
         closeInheritSettingsModal();
         
         // 更新资源表格
         renderResourceTable(resourceSearch.value, currentAppType);
+        
+        // 显示成功提示
+        showToast('授权排除设置已更新', 'success');
     });
     
     // 显示弹窗
     inheritSettingsModal.style.display = 'flex';
 }
 
+// 初始化用户选择下拉框
+function initUserSelectDropdown() {
+    const selectInput = document.getElementById('selectInput');
+    const dropdownList = document.getElementById('dropdownList');
+    
+    // 渲染用户选项
+    function renderUserOptions(users = mockUsers) {
+        const optionList = document.getElementById('optionList');
+        optionList.innerHTML = '';
+        
+        // 添加用户选项
+        users.forEach(user => {
+            const option = document.createElement('div');
+            option.className = 'dropdown-option';
+            option.innerHTML = `
+                <input type="checkbox" id="user_${user.id}" ${inheritExceptionUsers.includes(user.id) ? 'checked' : ''}>
+                <label for="user_${user.id}">${user.name}</label>
+            `;
+            
+            const checkbox = option.querySelector('input[type="checkbox"]');
+            checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                    if (!inheritExceptionUsers.includes(user.id)) {
+                        inheritExceptionUsers.push(user.id);
+                    }
+                } else {
+                    const index = inheritExceptionUsers.indexOf(user.id);
+                    if (index > -1) {
+                        inheritExceptionUsers.splice(index, 1);
+                    }
+                }
+                updateSelectedUsers();
+            });
+            
+            optionList.appendChild(option);
+        });
+    }
+    
+    // 更新已选择用户显示
+    function updateSelectedUsers() {
+        const selectedUsersDisplay = document.getElementById('selectedUsersDisplay');
+        selectedUsersDisplay.innerHTML = '';
+        
+        if (inheritExceptionUsers.length === 0) {
+            // 显示占位符
+            const placeholder = document.createElement('span');
+            placeholder.className = 'placeholder';
+            placeholder.textContent = '请选择要排除的用户';
+            selectedUsersDisplay.appendChild(placeholder);
+        } else {
+            // 显示选中的用户标签
+            inheritExceptionUsers.forEach(userId => {
+                const user = mockUsers.find(u => u.id === userId);
+                if (user) {
+                    const userTag = document.createElement('span');
+                    userTag.className = 'user-tag';
+                    userTag.innerHTML = `
+                        ${user.name}
+                        <span class="remove-btn" data-user-id="${user.id}">×</span>
+                    `;
+                    
+                    const removeBtn = userTag.querySelector('.remove-btn');
+                    removeBtn.addEventListener('click', function(e) {
+                        e.stopPropagation(); // 防止触发下拉框点击事件
+                        const userIdToRemove = this.getAttribute('data-user-id');
+                        const index = inheritExceptionUsers.indexOf(userIdToRemove);
+                        if (index > -1) {
+                            inheritExceptionUsers.splice(index, 1);
+                        }
+                        updateSelectedUsers();
+                        renderUserOptions();
+                    });
+                    
+                    selectedUsersDisplay.appendChild(userTag);
+                }
+            });
+        }
+    }
+    
+    // 点击输入框显示/隐藏下拉列表
+    selectInput.addEventListener('click', function() {
+        const isActive = dropdownList.classList.contains('active');
+        if (isActive) {
+            dropdownList.classList.remove('active');
+            selectInput.classList.remove('active');
+        } else {
+            dropdownList.classList.add('active');
+            selectInput.classList.add('active');
+            renderUserOptions();
+        }
+    });
+    
+    // 点击其他地方关闭下拉列表
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.multi-select-dropdown')) {
+            dropdownList.classList.remove('active');
+            selectInput.classList.remove('active');
+        }
+    });
+    
+    // 初始化显示
+    updateSelectedUsers();
+}
+
+// 编辑授权行功能
+function editAuthRow(index) {
+    console.log('编辑授权行:', index);
+    
+    // 获取当前授权数据（这里使用固定数据，实际应用中应该从数据源获取）
+    const authData = [
+        {
+            appName: '程序员工具集',
+            subject: '应用组 → 所有应用组',
+            validity: '永久授权',
+            creator: '张明华',
+            role: '总管理员',
+            type: 'permanent',
+            startDate: null,
+            endDate: null
+        },
+        {
+            appName: '程序员工具集',
+            subject: '应用组 → 所有公司用户',
+            validity: '永久授权',
+            creator: '李雅琴',
+            role: '总管理员',
+            type: 'permanent',
+            startDate: null,
+            endDate: null
+        },
+        {
+            appName: '程序员工具集',
+            subject: '所有公司部门',
+            validity: '2023-01-01 至 2023-12-31',
+            creator: '-',
+            role: '总管理员',
+            type: 'temporary',
+            startDate: '2023-01-01',
+            endDate: '2023-12-31'
+        }
+    ];
+    
+    const currentAuth = authData[index];
+    if (!currentAuth) {
+        showToast('未找到授权数据', 'error');
+        return;
+    }
+    
+    // 创建编辑模态框
+    const editModal = document.createElement('div');
+    editModal.className = 'modal';
+    editModal.id = 'editAuthModal';
+    editModal.style.display = 'flex';
+    
+    editModal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>编辑授权</h2>
+                <button class="close-btn" onclick="closeEditAuthModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>应用名称：</label>
+                    <span>${currentAuth.appName}</span>
+                </div>
+                <div class="form-group">
+                    <label>授权主体：</label>
+                    <span>${currentAuth.subject}</span>
+                </div>
+                <div class="form-group">
+                    <label>授权有效期：</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" id="editPermanentRadio" name="editValidityType" value="permanent" ${currentAuth.type === 'permanent' ? 'checked' : ''}>
+                            <label for="editPermanentRadio">永久授权</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="editTemporaryRadio" name="editValidityType" value="temporary" ${currentAuth.type === 'temporary' ? 'checked' : ''}>
+                            <label for="editTemporaryRadio">临时授权</label>
+                        </div>
+                    </div>
+                </div>
+                <div id="editDateRangeGroup" class="form-group" style="display: ${currentAuth.type === 'temporary' ? 'block' : 'none'}">
+                    <label>有效期：</label>
+                    <div class="date-range">
+                        <input type="date" id="editStartDate" value="${currentAuth.startDate || ''}">
+                        <span>至</span>
+                        <input type="date" id="editEndDate" value="${currentAuth.endDate || ''}">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="cancel-btn" onclick="closeEditAuthModal()">取消</button>
+                <button class="primary-btn" onclick="saveEditAuth(${index})">保存</button>
+            </div>
+        </div>
+    `;
+    
+    // 添加到页面
+    document.body.appendChild(editModal);
+    
+    // 添加事件监听器
+    const permanentRadio = document.getElementById('editPermanentRadio');
+    const temporaryRadio = document.getElementById('editTemporaryRadio');
+    const dateRangeGroup = document.getElementById('editDateRangeGroup');
+    
+    permanentRadio.addEventListener('change', function() {
+        if (this.checked) {
+            dateRangeGroup.style.display = 'none';
+        }
+    });
+    
+    temporaryRadio.addEventListener('change', function() {
+        if (this.checked) {
+            dateRangeGroup.style.display = 'block';
+        }
+    });
+}
+
+// 删除授权行功能
+function removeAuthRow(index, authType, resourceId) {
+    console.log('删除授权行:', index, '类型:', authType, '资源ID:', resourceId);
+    
+    // 显示确认对话框
+    if (confirm('确定要取消这条授权关系吗？此操作不可撤销。')) {
+        // 查找对应的资源数据
+        const resourceIndex = resourcesData.findIndex(r => r.id == resourceId);
+        if (resourceIndex !== -1) {
+            const resource = resourcesData[resourceIndex];
+            
+            // 如果删除的是直接授权
+            if (authType === 'direct') {
+                // 对于组合授权，删除第一个时间段（直接授权）
+                if (resource.validity.periods && resource.validity.periods.length > 1) {
+                    // 删除第一个时间段，保留间接授权
+                    resource.validity.periods.splice(0, 1);
+                    // 如果只剩一个时间段，转换为单个授权
+                    if (resource.validity.periods.length === 1) {
+                        const remainingPeriod = resource.validity.periods[0];
+                        if (remainingPeriod.type === 'permanent') {
+                            resource.validity = {
+                                type: 'permanent',
+                                startDate: null,
+                                endDate: null
+                            };
+                        } else {
+                            resource.validity = {
+                                type: 'temporary',
+                                startDate: remainingPeriod.startDate,
+                                endDate: remainingPeriod.endDate
+                            };
+                        }
+                    }
+                } else {
+                    // 对于单个授权，设置为未授权状态
+                    resource.validity = {
+                        type: 'unauthorized'
+                    };
+                    resource.icon = '未';
+                    resource.iconColor = 'gray';
+                }
+            } else {
+                // 删除间接授权（从periods数组中删除对应项）
+                if (resource.validity.periods && index < resource.validity.periods.length) {
+                    resource.validity.periods.splice(index, 1);
+                    // 如果删除后没有时间段了，设置为未授权
+                    if (resource.validity.periods.length === 0) {
+                        resource.validity = {
+                            type: 'unauthorized'
+                        };
+                        resource.icon = '未';
+                        resource.iconColor = 'gray';
+                    }
+                }
+            }
+            
+            console.log('删除授权行:', index, '更新后的资源数据:', resource);
+            showToast('已取消授权', 'success');
+            
+            // 重新渲染主表格以反映变化
+            renderResourceTable(document.getElementById('resourceSearch').value, currentAppType);
+        }
+        
+        // 重新加载抽屉内容以显示更新后的数据
+        viewOtherAuth(resourceId);
+        
+        // 删除直接授权后，使用表格内第一行按钮而非底部按钮
+        if (authType === 'direct') {
+            const addAuthContainer = document.getElementById('addAuthContainer');
+            if (addAuthContainer) {
+                addAuthContainer.style.display = 'none';
+            }
+        }
+    }
+}
+
+// 关闭编辑授权模态框
+function closeEditAuthModal() {
+    const editModal = document.getElementById('editAuthModal');
+    if (editModal) {
+        editModal.remove();
+    }
+}
+
+// 保存编辑的授权
+function saveEditAuth(index) {
+    const validityType = document.querySelector('input[name="editValidityType"]:checked').value;
+    const startDate = document.getElementById('editStartDate').value;
+    const endDate = document.getElementById('editEndDate').value;
+    
+    // 验证临时授权的日期
+    if (validityType === 'temporary') {
+        if (!startDate || !endDate) {
+            showToast('请选择有效期开始和结束日期', 'error');
+            return;
+        }
+        if (new Date(startDate) >= new Date(endDate)) {
+            showToast('开始日期必须早于结束日期', 'error');
+            return;
+        }
+    }
+    
+    // 更新currentAuthData中的数据
+    if (currentAuthData[index]) {
+        currentAuthData[index].validityType = validityType;
+        currentAuthData[index].startDate = validityType === 'permanent' ? null : startDate;
+        currentAuthData[index].endDate = validityType === 'permanent' ? null : endDate;
+        currentAuthData[index].validity = validityType === 'permanent' ? '永久授权' : `${startDate} 至 ${endDate}`;
+    }
+    
+    // 同步更新resourcesData中的原始数据
+    const resourceIndex = resourcesData.findIndex(r => r.id == currentResourceId);
+    if (resourceIndex !== -1) {
+        const resource = resourcesData[resourceIndex];
+        const authData = currentAuthData[index];
+        
+        // 如果是直接授权（第一条记录且type为direct）
+        if (index === 0 && authData.type === 'direct') {
+            if (resource.validity.periods) {
+                // 组合授权：更新第一个时间段
+                if (validityType === 'permanent') {
+                    resource.validity.periods[0] = { type: 'permanent' };
+                } else {
+                    resource.validity.periods[0] = { startDate: startDate, endDate: endDate };
+                }
+            } else {
+                // 单个授权：直接更新validity
+                if (validityType === 'permanent') {
+                    resource.validity = {
+                        type: 'permanent',
+                        startDate: null,
+                        endDate: null
+                    };
+                } else {
+                    resource.validity = {
+                        type: 'temporary',
+                        startDate: startDate,
+                        endDate: endDate
+                    };
+                }
+            }
+        } else if (authData.type === 'indirect' && resource.validity.periods) {
+            // 间接授权：更新对应的时间段（index对应periods数组中的索引）
+            if (resource.validity.periods[index]) {
+                if (validityType === 'permanent') {
+                    resource.validity.periods[index] = { type: 'permanent' };
+                } else {
+                    resource.validity.periods[index] = { startDate: startDate, endDate: endDate };
+                }
+            }
+        }
+        
+        // 重新渲染主表格以反映变化
+        renderResourceTable(document.getElementById('resourceSearch').value, currentAppType);
+    }
+    
+    showToast('应用授权已更新', 'success');
+    closeEditAuthModal();
+    
+    // 重新加载抽屉内容以显示更新后的数据
+    viewOtherAuth(currentResourceId);
+}
+
  // 关闭查看其他授权抽屉式弹窗
 function closeOtherAuthDrawer() {
-    const otherAuthDrawer = document.getElementById('otherAuthDrawer');
-    otherAuthDrawer.classList.remove('active');
+    closeDrawerWithConfirm();
+}
+
+// 打开新增授权时间选择弹窗
+function openAddAuthModal(resourceId) {
+    // 调用授权设置弹窗，模式为新增
+    openAuthSettingsModal(resourceId, 'add');
 }
 
 // 页面加载完成后初始化
@@ -2645,7 +3616,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 添加关闭查看其他授权抽屉式弹窗的事件监听器
     const closeOtherAuthDrawerBtn = document.getElementById('closeOtherAuthDrawer');
     if (closeOtherAuthDrawerBtn) {
-        closeOtherAuthDrawerBtn.addEventListener('click', closeOtherAuthDrawer);
+        closeOtherAuthDrawerBtn.addEventListener('click', closeDrawerWithConfirm);
     }
     
     // 绑定取消授权弹窗的事件

@@ -20,7 +20,7 @@
                 <button id="helpBtn" class="icon-btn">i</button>
             </div>
             <div class="header-right">
-                <button id="inheritBtn" class="text-btn">组织机构授权排除</button>
+                <button id="inheritBtn" class="text-btn">授权排除</button>
                 <button id="settingsBtn" class="text-btn">未授权文案自定义</button>
                 <button id="exportBtn" class="text-btn">应用授权汇总查询</button>
             </div>
@@ -109,7 +109,7 @@
                                 <th>应用名称</th>
                                 <th>访问地址</th>
                                 <th>授权状态</th>
-                                <th>操作</th>
+                                <th>授权详情</th>
                             </tr>
                         </thead>
                         <tbody id="resourceTableBody">
@@ -190,7 +190,7 @@
                 <span class="close-btn" id="closeRemoveAuthModal">&times;</span>
             </div>
             <div class="modal-body">
-                <div class="confirm-text">确定要取消此资源的授权吗？</div>
+                <div class="confirm-text">确定要取消授权吗？</div>
             </div>
             <div class="modal-footer">
                 <button class="secondary-btn" id="cancelRemoveAuthBtn">取消</button>
@@ -244,32 +244,32 @@
     <div class="modal" id="inheritSettingsModal">
         <div class="modal-content inherit-modal-content">
             <div class="modal-header">
-                <h2>组织机构授权排除</h2>
+                <h2>授权排除</h2>
                 <span class="close-btn" id="closeInheritModal">&times;</span>
             </div>
             <div class="modal-body">
                 <div class="inherit-warning" id="inheritWarning">
                     <span class="info-icon">i</span>
-                    <p>启用"用户排除名单"时，名单中的用户不随组织机构获得授权。<br>被排除的用户仍可通过【用户组】进行批量授权，或者单独授权。</p>
-                </div>
-                <div class="form-group">
-                    <div class="switch-container">
-                        <label class="switch-label">用户排除名单</label>
-                        <label class="switch">
-                            <input type="checkbox" id="inheritToggle">
-                            <span class="slider round"></span>
-                        </label>
-                    </div>
+                    <p>选择需要排除授权的用户，被排除的用户不会随组织机构获得授权。<br>被排除的用户仍可通过【用户组】进行批量授权，或者单独授权。</p>
                 </div>
                 
-                <!-- 用户列表部分 -->
-                <div class="user-list-container" id="userListContainer" style="display: none;">
-                    <div class="user-list-header">
-                        <h3>用户排除名单</h3>
-                        <button class="add-user-btn" id="addUserBtn">添加用户</button>
-                    </div>
-                    <div class="user-list" id="exceptionUserList">
-                        <!-- 用户列表将通过JavaScript动态生成 -->
+                <!-- 用户选择部分 -->
+                <div class="form-group">
+                    <label class="form-label">选择用户：</label>
+                    <div class="user-select-container">
+                        <div class="multi-select-dropdown" id="userSelectDropdown">
+                            <div class="select-input" id="selectInput">
+                                <div class="selected-users-display" id="selectedUsersDisplay">
+                                    <span class="placeholder">请选择要排除的用户</span>
+                                </div>
+                                <span class="dropdown-arrow">▼</span>
+                            </div>
+                            <div class="dropdown-list" id="dropdownList">
+                                <div class="option-list" id="optionList">
+                                    <!-- 用户选项将通过JavaScript动态生成 -->
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -319,7 +319,7 @@
         <div class="drawer-content">
             <div class="drawer-header">
                 <button class="close-btn" id="closeOtherAuthDrawer">&times;</button>
-                <h2>查看其他授权</h2>
+                <h2>授权详情</h2>
             </div>
             <div class="drawer-body">
                 <div class="auth-table-container">
@@ -331,25 +331,16 @@
                                 <th>授权有效期</th>
                                 <th>创建者</th>
                                 <th>所属角色</th>
+                                <th>操作</th>
                             </tr>
                         </thead>
                         <tbody id="otherAuthTableBody">
-                            <tr>
-                                <td>程序员工具集</td>
-                                <td>应用组 → 所有应用组</td>
-                                <td>永久授权</td>
-                                <td>-</td>
-                                <td>总管理员</td>
-                            </tr>
-                            <tr>
-                                <td>程序员工具集</td>
-                                <td>应用组 → 所有公司用户</td>
-                                <td>2023-01-01 至 2023-12-31</td>
-                                <td>-</td>
-                                <td>总管理员</td>
-                            </tr>
+                            <!-- 表格内容将通过JavaScript动态生成 -->
                         </tbody>
                     </table>
+                </div>
+                <div class="add-auth-container" id="addAuthContainer" style="display: none; margin-top: 20px; text-align: center;">
+                    <button class="add-auth-btn" id="addAuthBtn" style="background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">新增授权</button>
                 </div>
             </div>
         </div>

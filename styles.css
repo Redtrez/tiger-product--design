@@ -114,6 +114,8 @@ header {
     cursor: pointer;
     white-space: nowrap;
     margin-left: 5px;
+    min-width: 150px;
+    text-align: center;
 }
 
 .text-btn.active {
@@ -371,11 +373,36 @@ header {
 }
 
 .edit-auth-btn {
+    background: none;
+    border: none;
     color: #1890ff;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-right: 8px;
+    transition: all 0.2s ease;
+}
+
+.edit-auth-btn:hover {
+    background-color: #f0f8ff;
+    transform: scale(1.1);
 }
 
 .remove-auth-btn {
-    color: #666;
+    background: none;
+    border: none;
+    color: #ff4d4f;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.remove-auth-btn:hover {
+    background-color: #fff2f0;
+    transform: scale(1.1);
 }
 
 .view-other-auth-btn[disabled],
@@ -385,6 +412,68 @@ header {
     cursor: not-allowed;
     text-decoration: none;
     pointer-events: none;
+}
+
+/* 新的操作按钮样式 */
+.operation-btn {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: #666;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    min-height: 24px;
+    border-radius: 4px;
+    position: relative;
+}
+
+.operation-btn:hover {
+    color: #1890ff;
+    transform: scale(1.1);
+}
+
+.operation-btn:active {
+    transform: scale(1.05);
+}
+
+.operation-btn svg {
+    width: 17px;
+    height: 17px;
+    stroke: currentColor;
+    fill: none;
+    z-index: 3;
+    transition: all 0.2s ease;
+    transform-origin: bottom;
+}
+
+.operation-btn:hover svg {
+    transform: rotate(-15deg) translateX(2px);
+    stroke: #1890ff;
+}
+
+.operation-btn::after {
+    content: "";
+    width: 12px;
+    height: 1px;
+    position: absolute;
+    bottom: 8px;
+    left: -2px;
+    background-color: #1890ff;
+    border-radius: 1px;
+    z-index: 2;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease-out;
+}
+
+.operation-btn:hover::after {
+    transform: scaleX(1);
+    left: 2px;
+    transform-origin: right;
 }
 
 .resource-table table {
@@ -528,7 +617,7 @@ tr:hover {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
+    z-index: 1100;
     justify-content: center;
     align-items: center;
 }
@@ -552,7 +641,8 @@ tr:hover {
     width: 500px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     max-height: 90vh;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 
 /* 授权类型标签样式 */
@@ -601,6 +691,8 @@ tr:hover {
 
 .modal-body {
     padding: 24px;
+    overflow-y: auto;
+    flex: 1;
 }
 
 .modal-footer {
@@ -675,7 +767,7 @@ tr:hover {
 }
 
 .drawer-content {
-    width: 600px;
+    width: 1200px;
     background-color: #fff;
     height: 100%;
     box-shadow: -4px 0 12px rgba(0, 0, 0, 0.15);
@@ -683,6 +775,41 @@ tr:hover {
     transition: transform 0.3s ease-in-out;
     display: flex;
     flex-direction: column;
+}
+
+.readonly-field {
+    color: inherit;
+    background-color: transparent;
+    padding: 0;
+    border: none;
+    display: inline;
+    min-width: auto;
+    text-align: left;
+}
+
+/* 新增授权行样式 */
+.add-auth-row {
+    height: 40px;
+}
+
+.add-auth-cell {
+    text-align: center;
+    padding: 8px 15px;
+    background-color: #e6f7ff;
+}
+
+.add-auth-btn {
+    background: none;
+    color: #1890ff;
+    border: none;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: color 0.2s;
+}
+
+.add-auth-btn:hover {
+    color: #40a9ff;
 }
 
 .drawer-modal.active .drawer-content {
@@ -738,6 +865,84 @@ tr:hover {
 
 .auth-table tbody tr:hover {
     background-color: #f5f7fa;
+}
+
+/* 行内编辑样式 */
+.edit-validity-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.radio-group-inline {
+    display: flex;
+    gap: 15px;
+}
+
+.radio-inline {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: normal;
+    margin: 0;
+    cursor: pointer;
+}
+
+.radio-inline input[type="radio"] {
+    margin: 0;
+}
+
+.date-inputs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+.date-input-small {
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 12px;
+    width: 120px;
+}
+
+.creator-select,
+.role-select {
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 12px;
+    width: 100%;
+    background-color: white;
+}
+
+.save-auth-btn,
+.cancel-auth-btn,
+.edit-auth-btn,
+.remove-auth-btn {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.2s;
+}
+
+.save-auth-btn:hover {
+    background-color: #e8f5e8;
+}
+
+.cancel-auth-btn:hover {
+    background-color: #f8f9fa;
+}
+
+.edit-auth-btn:hover {
+    background-color: #e3f2fd;
+}
+
+.remove-auth-btn:hover {
+    background-color: #ffebee;
 }
 
 .auth-info-value {
@@ -1284,6 +1489,15 @@ input:checked + .slider:before {
     line-height: 1.5;
     min-height: 20px;
     box-sizing: border-box;
+    cursor: help;
+    position: relative;
+}
+
+/* hover效果增强 */
+.validity-tag[title]:hover {
+    opacity: 0.8;
+    transform: scale(1.02);
+    transition: all 0.2s ease;
 }
 
 .validity-tag.permanent {
@@ -1365,4 +1579,153 @@ input:checked + .slider:before {
 
 .view-other-auth:hover {
     text-decoration: underline;
+}
+
+/* 多选下拉框样式 */
+.user-select-container {
+    width: 100%;
+}
+
+.multi-select-dropdown {
+    position: relative;
+    width: 100%;
+}
+
+.select-input {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    background-color: #fff;
+    cursor: pointer;
+    min-height: 32px;
+}
+
+.select-input:hover {
+    border-color: #40a9ff;
+}
+
+.select-input.active {
+    border-color: #1890ff;
+    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.selected-users-display {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+}
+
+.selected-users-display .placeholder {
+    color: #bfbfbf;
+}
+
+.selected-users-display .user-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    background-color: #f0f0f0;
+    border-radius: 3px;
+    font-size: 12px;
+    gap: 4px;
+}
+
+.selected-users-display .user-tag .remove-btn {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0;
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.selected-users-display .user-tag .remove-btn:hover {
+    color: #ff4d4f;
+}
+
+.dropdown-arrow {
+    color: #bfbfbf;
+    font-size: 12px;
+    transition: transform 0.3s;
+    margin-left: 8px;
+}
+
+.select-input.active .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.dropdown-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #d9d9d9;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+}
+
+.dropdown-list.active {
+    display: block;
+}
+
+.dropdown-list .search-box {
+    padding: 8px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.dropdown-list .search-box input {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.option-list {
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.dropdown-option {
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dropdown-option:hover {
+    background-color: #f5f5f5;
+}
+
+.dropdown-option.selected {
+    background-color: #e6f7ff;
+    color: #1890ff;
+}
+
+.dropdown-option input[type="checkbox"] {
+    margin: 0;
+}
+
+/* 原有的selected-users样式已移动到selected-users-display中 */
+
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
 }
