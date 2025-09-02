@@ -2366,11 +2366,11 @@ function renderAuthTable() {
                         <div class="radio-group-inline">
                             <label class="radio-inline">
                                 <input type="radio" name="editValidityType_${index}" value="permanent" ${auth.validityType === 'permanent' ? 'checked' : ''}>
-                                永久授权
+                                永久有效
                             </label>
                             <label class="radio-inline">
                                 <input type="radio" name="editValidityType_${index}" value="temporary" ${auth.validityType === 'temporary' ? 'checked' : ''}>
-                                临时授权
+                                设置有效期
                             </label>
                         </div>
                         <div class="date-inputs" id="editDateInputs_${index}" style="${auth.validityType === 'permanent' ? 'display: none;' : 'display: block;'}">
@@ -3385,11 +3385,11 @@ function editAuthRow(index) {
                     <div class="radio-group">
                         <div class="radio-item">
                             <input type="radio" id="editPermanentRadio" name="editValidityType" value="permanent" ${currentAuth.type === 'permanent' ? 'checked' : ''}>
-                            <label for="editPermanentRadio">永久授权</label>
+                            <label for="editPermanentRadio">永久有效</label>
                         </div>
                         <div class="radio-item">
                             <input type="radio" id="editTemporaryRadio" name="editValidityType" value="temporary" ${currentAuth.type === 'temporary' ? 'checked' : ''}>
-                            <label for="editTemporaryRadio">临时授权</label>
+                            <label for="editTemporaryRadio">设置有效期</label>
                         </div>
                     </div>
                 </div>
