@@ -322,23 +322,56 @@
                 <h2>授权详情</h2>
             </div>
             <div class="drawer-body">
-                <div class="auth-table-container">
-                    <table class="auth-table">
-                        <thead>
-                            <tr>
-                                <th>应用</th>
-                                <th>主体</th>
-                                <th>授权有效期</th>
-                                <th>创建者</th>
-                                <th>所属角色</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="otherAuthTableBody">
-                            <!-- 表格内容将通过JavaScript动态生成 -->
-                        </tbody>
-                    </table>
+                <!-- 直接授权表格区域 -->
+                <div class="auth-section" id="directAuthSection">
+                    <div class="auth-section-header">
+                        <h3>直接授权</h3>
+                        <span class="auth-count" id="directAuthCount">0条</span>
+                    </div>
+                    <div class="auth-table-container">
+                        <table class="auth-table">
+                            <thead>
+                                <tr>
+                                    <th>应用</th>
+                                    <th>主体</th>
+                                    <th>授权有效期</th>
+                                    <th>创建者</th>
+                                    <th>所属角色</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="directAuthTableBody">
+                                <!-- 直接授权表格内容将通过JavaScript动态生成 -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+                
+                <!-- 间接授权表格区域 -->
+                <div class="auth-section" id="indirectAuthSection">
+                    <div class="auth-section-header">
+                        <h3>间接授权</h3>
+                        <span class="auth-count" id="indirectAuthCount">0条</span>
+                    </div>
+                    <div class="auth-table-container">
+                        <table class="auth-table">
+                            <thead>
+                                <tr>
+                                    <th>应用</th>
+                                    <th>主体</th>
+                                    <th>授权有效期</th>
+                                    <th>创建者</th>
+                                    <th>所属角色</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="indirectAuthTableBody">
+                                <!-- 间接授权表格内容将通过JavaScript动态生成 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
                 <div class="add-auth-container" id="addAuthContainer" style="display: none; margin-top: 20px; text-align: center;">
                     <button class="add-auth-btn" id="addAuthBtn" style="background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">新增授权</button>
                 </div>

@@ -767,7 +767,7 @@ tr:hover {
 }
 
 .drawer-content {
-    width: 1200px;
+    width: 1440px;
     background-color: #fff;
     height: 100%;
     box-shadow: -4px 0 12px rgba(0, 0, 0, 0.15);
@@ -856,6 +856,14 @@ tr:hover {
     color: #666;
     border-bottom: 1px solid #e0e0e0;
 }
+
+/* 统一列宽设置 */
+.auth-table th:nth-child(1) { width: 19%; } /* 应用 */
+.auth-table th:nth-child(2) { width: 16%; } /* 主体 */
+.auth-table th:nth-child(3) { width: 25%; } /* 授权有效期 */
+.auth-table th:nth-child(4) { width: 10%; } /* 创建者 */
+.auth-table th:nth-child(5) { width: 10%; } /* 所属角色 */
+.auth-table th:nth-child(6) { width: 20%; } /* 操作 */
 
 .auth-table td {
     padding: 12px 15px;
@@ -1728,4 +1736,89 @@ input:checked + .slider:before {
     margin-bottom: 8px;
     font-weight: 500;
     color: #333;
+}
+
+/* 直接授权和间接授权表格样式 */
+.auth-section {
+    margin-bottom: 24px;
+}
+
+.auth-section:last-child {
+    margin-bottom: 0;
+}
+
+.auth-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.auth-section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+}
+
+.auth-count {
+    font-size: 14px;
+    color: #666;
+    background-color: #f5f5f5;
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.direct-auth-section .auth-section-header {
+    border-bottom-color: #1890ff;
+}
+
+.direct-auth-section .auth-section-title {
+    color: #1890ff;
+}
+
+.indirect-auth-section .auth-section-header {
+    border-bottom-color: #52c41a;
+}
+
+.indirect-auth-section .auth-section-title {
+    color: #52c41a;
+}
+
+.auth-table-wrapper {
+    border: 1px solid #e8e8e8;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.direct-auth-section .auth-table-wrapper {
+    border-color: #d6e4ff;
+    background-color: #f6f9ff;
+}
+
+.indirect-auth-section .auth-table-wrapper {
+    border-color: #d9f7be;
+    background-color: #f6ffed;
+}
+
+.empty-auth-message {
+    text-align: center;
+    padding: 40px 20px;
+    color: #999;
+    font-size: 14px;
+    background-color: #fafafa;
+    border: 1px dashed #d9d9d9;
+    border-radius: 6px;
+}
+
+.direct-auth-section .empty-auth-message {
+    background-color: #f6f9ff;
+    border-color: #d6e4ff;
+}
+
+.indirect-auth-section .empty-auth-message {
+    background-color: #f6ffed;
+    border-color: #d9f7be;
 }

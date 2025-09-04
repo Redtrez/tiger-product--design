@@ -287,8 +287,8 @@ const resourcesData = [
         validity: {
             type: 'temporary',
             periods: [
-                { startDate: '2025-09-15', endDate: '2025-12-31' },
-                { startDate: '2026-02-01', endDate: '2026-04-30' }
+                { startDate: '2025-09-15', endDate: '2025-12-31', isDirect: true },
+                { startDate: '2026-02-01', endDate: '2026-04-30', isDirect: false }
             ]
         },
         otherAuth: {
@@ -306,8 +306,8 @@ const resourcesData = [
         validity: {
             type: 'temporary',
             periods: [
-                { startDate: '2025-01-01', endDate: new Date(new Date().getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
-                { startDate: '2025-06-01', endDate: '2025-08-31' }
+                { startDate: '2025-01-01', endDate: new Date(new Date().getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], isDirect: true },
+                { startDate: '2025-06-01', endDate: '2025-08-31', isDirect: false }
             ]
         },
         otherAuth: {
@@ -325,9 +325,9 @@ const resourcesData = [
         validity: {
             type: 'temporary',
             periods: [
-                { startDate: '2025-01-01', endDate: '2025-03-31' },
-                { startDate: '2025-07-01', endDate: '2025-12-31' },
-                { startDate: '2026-02-01', endDate: '2026-12-31' }
+                { startDate: '2025-01-01', endDate: '2025-03-31', isDirect: true },
+                { startDate: '2025-07-01', endDate: '2025-12-31', isDirect: false },
+                { startDate: '2026-02-01', endDate: '2026-12-31', isDirect: false }
             ]
         },
         otherAuth: {
@@ -345,8 +345,8 @@ const resourcesData = [
         validity: {
             type: 'temporary',
             periods: [
-                { startDate: '2025-01-01', endDate: '2025-07-31' },
-                { startDate: '2025-09-10', endDate: '2026-02-28' }
+                { startDate: '2025-01-01', endDate: '2025-07-31', isDirect: true },
+                { startDate: '2025-09-10', endDate: '2026-02-28', isDirect: false }
             ]
         },
         otherAuth: {
@@ -364,8 +364,8 @@ const resourcesData = [
         validity: {
             type: 'temporary',
             periods: [
-                { startDate: '2024-01-01', endDate: '2025-02-28' },
-                { startDate: '2025-03-01', endDate: '2025-06-30' }
+                { startDate: '2024-01-01', endDate: '2025-02-28', isDirect: true },
+                { startDate: '2025-03-01', endDate: '2025-06-30', isDirect: false }
             ]
         },
         otherAuth: {
@@ -383,8 +383,8 @@ const resourcesData = [
         validity: {
             type: 'combined',
             periods: [
-                { startDate: '2025-01-01', endDate: '2025-12-31' },
-                { type: 'permanent' }
+                { startDate: '2025-01-01', endDate: '2025-12-31', isDirect: true },
+                { type: 'permanent', isDirect: false }
             ]
         },
         otherAuth: {
@@ -2218,15 +2218,11 @@ let currentResourceId = null;
 function viewOtherAuth(authId) {
     // 获取抽屉式弹窗元素
     const otherAuthDrawer = document.getElementById('otherAuthDrawer');
-    const otherAuthTableBody = document.getElementById('otherAuthTableBody');
     
     // 重置编辑状态
     editingRowIndex = null;
     originalRowData = null;
     currentResourceId = authId;
-    
-    // 清空表格内容
-    otherAuthTableBody.innerHTML = '';
     
     // 查找对应的资源数据
     const resource = resourcesData.find(r => r.id == authId);
@@ -2252,31 +2248,44 @@ function viewOtherAuth(authId) {
                 // 组合授权：显示多条授权记录
                 if (resource.validity.periods) {
                     resource.validity.periods.forEach((period, index) => {
-                        // 第一个时间段为直接授权，其余为间接授权
-                        const authType = index === 0 ? 'direct' : 'indirect';
+                        // 根据period对象中的isDirect属性判断授权类型
+                        // 授权类型应该是固定属性，不应该基于动态索引判断
+                        let authType;
+                        if (period.isDirect === true) {
+                            authType = 'direct';
+                        } else if (period.isDirect === false) {
+                            authType = 'indirect';
+                        } else {
+                            // 如果数据中没有isDirect属性，说明数据有问题
+                            // 这种情况下应该报错或者有明确的默认处理
+                            console.warn('Period对象缺少isDirect属性:', period);
+                            authType = 'indirect'; // 默认为间接授权，避免误判
+                        }
                         if (period.type === 'permanent') {
                             currentAuthData.push({
                                 appName: resource.name,
-                                subject: `${currentEntity} → ${resource.name}`,
+                                subject: currentEntity,
                                 validity: '永久授权',
                                 validityType: 'permanent',
                                 startDate: null,
                                 endDate: null,
                                 creator: creators[Math.floor(Math.random() * creators.length)],
                                 role: roles[Math.floor(Math.random() * roles.length)],
-                                type: authType
+                                type: authType,
+                                periodIndex: index
                             });
                         } else {
                             currentAuthData.push({
                                 appName: resource.name,
-                                subject: `${currentEntity} → ${resource.name}`,
+                                subject: currentEntity,
                                 validity: `${period.startDate} 至 ${period.endDate}`,
                                 validityType: 'temporary',
                                 startDate: period.startDate,
                                 endDate: period.endDate,
                                 creator: creators[Math.floor(Math.random() * creators.length)],
                                 role: roles[Math.floor(Math.random() * roles.length)],
-                                type: authType
+                                type: authType,
+                                periodIndex: index
                             });
                         }
                     });
@@ -2284,11 +2293,11 @@ function viewOtherAuth(authId) {
             } else {
                 // 单个授权：显示一条授权记录
                 const validityType = resource.validity.type;
-                // 判断是否为间接授权：如果有otherAuth属性，说明这是间接授权
-                const authType = resource.otherAuth ? 'indirect' : 'direct';
+                // 单个授权默认为直接授权，因为它是当前主体对当前资源的直接授权
+                const authType = 'direct';
                 currentAuthData.push({
                     appName: resource.name,
-                    subject: `${currentEntity} → ${resource.name}`,
+                    subject: currentEntity,
                     validity: getValidityDisplayText(resource.validity),
                     validityType: validityType,
                     startDate: resource.validity.startDate,
@@ -2305,13 +2314,7 @@ function viewOtherAuth(authId) {
     } else {
         // 显示空状态信息
         currentAuthData = [];
-         const emptyRow = document.createElement('tr');
-         emptyRow.innerHTML = `
-             <td colspan="6" style="text-align: center; color: #999; padding: 20px;">
-                 暂无授权信息
-             </td>
-         `;
-        otherAuthTableBody.appendChild(emptyRow);
+        renderAuthTable();
     }
     
     // 初始化新增授权按钮事件
@@ -2332,16 +2335,26 @@ function viewOtherAuth(authId) {
 
 // 渲染授权表格
 function renderAuthTable() {
-    const otherAuthTableBody = document.getElementById('otherAuthTableBody');
-    otherAuthTableBody.innerHTML = '';
+    const directAuthTableBody = document.getElementById('directAuthTableBody');
+    const indirectAuthTableBody = document.getElementById('indirectAuthTableBody');
+    const directAuthCount = document.getElementById('directAuthCount');
+    const indirectAuthCount = document.getElementById('indirectAuthCount');
     
-    // 检查是否存在直接授权
-    const hasDirectAuth = currentAuthData.some(auth => auth.type === 'direct');
+    // 清空表格内容
+    directAuthTableBody.innerHTML = '';
+    indirectAuthTableBody.innerHTML = '';
     
-
+    // 分组授权数据
+    const directAuths = currentAuthData.filter(auth => auth.type === 'direct');
+    const indirectAuths = currentAuthData.filter(auth => auth.type === 'indirect');
     
-    // 当没有直接授权且没有正在编辑时，显示新增授权按钮（虚线框样式）
-    if (!hasDirectAuth && editingRowIndex === null) {
+    // 更新统计信息
+    directAuthCount.textContent = `${directAuths.length}条`;
+    indirectAuthCount.textContent = `${indirectAuths.length}条`;
+    
+    // 渲染直接授权表格
+    if (directAuths.length === 0 && editingRowIndex === null) {
+        // 当没有直接授权且没有正在编辑时，显示新增授权按钮
         const addRow = document.createElement('tr');
         addRow.className = 'add-auth-row';
         addRow.innerHTML = `
@@ -2349,92 +2362,115 @@ function renderAuthTable() {
                 <button class="add-auth-btn" onclick="addNewAuthRow()">+ 新增授权</button>
             </td>
         `;
-        otherAuthTableBody.appendChild(addRow);
+        directAuthTableBody.appendChild(addRow);
+    } else {
+        directAuths.forEach((auth, index) => {
+            const globalIndex = currentAuthData.indexOf(auth);
+            const row = createAuthRow(auth, globalIndex);
+            directAuthTableBody.appendChild(row);
+        });
     }
     
-    currentAuthData.forEach((auth, index) => {
-        const row = document.createElement('tr');
-        row.setAttribute('data-row-index', index);
-        
-        if (editingRowIndex === index) {
-            // 编辑模式
-            row.innerHTML = `
-                <td>${auth.appName}</td>
-                <td>${auth.subject}</td>
-                <td>
-                    <div class="edit-validity-container">
-                        <div class="radio-group-inline">
-                            <label class="radio-inline">
-                                <input type="radio" name="editValidityType_${index}" value="permanent" ${auth.validityType === 'permanent' ? 'checked' : ''}>
-                                永久有效
-                            </label>
-                            <label class="radio-inline">
-                                <input type="radio" name="editValidityType_${index}" value="temporary" ${auth.validityType === 'temporary' ? 'checked' : ''}>
-                                设置有效期
-                            </label>
-                        </div>
-                        <div class="date-inputs" id="editDateInputs_${index}" style="${auth.validityType === 'permanent' ? 'display: none;' : 'display: block;'}">
-                            <input type="date" id="editStartDate_${index}" value="${auth.startDate || ''}" class="date-input-small">
-                            <span>至</span>
-                            <input type="date" id="editEndDate_${index}" value="${auth.endDate || ''}" class="date-input-small">
-                        </div>
-                    </div>
-                </td>
-                <td>
-                    <span class="readonly-field">${auth.creator}</span>
-                </td>
-                <td>
-                    <span class="readonly-field">${auth.role}</span>
-                </td>
-                <td>
-                    <button class="save-auth-btn" onclick="saveEditingRow(${index})" style="color: #28a745; background: none; border: none; cursor: pointer; margin-right: 8px;">保存修改</button>
-                    <button class="cancel-auth-btn" onclick="cancelEditingRow(${index})" style="color: #6c757d; background: none; border: none; cursor: pointer;">取消修改</button>
-                </td>
-            `;
-            
-            // 添加事件监听器
-            setTimeout(() => {
-                const permanentRadio = row.querySelector(`input[name="editValidityType_${index}"][value="permanent"]`);
-                const temporaryRadio = row.querySelector(`input[name="editValidityType_${index}"][value="temporary"]`);
-                const dateInputs = row.querySelector(`#editDateInputs_${index}`);
-                
-                if (permanentRadio && temporaryRadio && dateInputs) {
-                    permanentRadio.addEventListener('change', () => {
-                        if (permanentRadio.checked) {
-                            dateInputs.style.display = 'none';
-                        }
-                    });
-                    
-                    temporaryRadio.addEventListener('change', () => {
-                        if (temporaryRadio.checked) {
-                            dateInputs.style.display = 'block';
-                        }
-                    });
-                }
-            }, 0);
-        } else {
-            // 显示模式
-            row.innerHTML = `
-                <td>${auth.appName}</td>
-                <td>${auth.subject}</td>
-                <td>${auth.validity}</td>
-                <td>${auth.creator}</td>
-                <td>${auth.role}</td>
-                <td>
-                    <button class="edit-auth-btn" onclick="startEditingRow(${index})" style="color: #007bff; background: none; border: none; cursor: pointer; margin-right: 8px;">编辑有效期</button>
-                    <button class="remove-auth-btn" onclick="removeAuthRow(${index}, '${auth.type}', ${currentResourceId})" style="color: #dc3545; background: none; border: none; cursor: pointer;">取消授权</button>
-                </td>
-            `;
-        }
-        
-        otherAuthTableBody.appendChild(row);
-    });
+    // 渲染间接授权表格
+    if (indirectAuths.length === 0) {
+        const emptyRow = document.createElement('tr');
+        emptyRow.innerHTML = `
+            <td colspan="6" class="empty-auth-cell" style="text-align: center; color: #999; padding: 20px;">
+                暂无间接授权
+            </td>
+        `;
+        indirectAuthTableBody.appendChild(emptyRow);
+    } else {
+        indirectAuths.forEach((auth, index) => {
+            const globalIndex = currentAuthData.indexOf(auth);
+            const row = createAuthRow(auth, globalIndex, false); // 间接授权也可以编辑
+            indirectAuthTableBody.appendChild(row);
+        });
+    }
     
     // 隐藏底部新增按钮（使用表格内第一行按钮代替）
     const addAuthContainer = document.getElementById('addAuthContainer');
     if (addAuthContainer) {
         addAuthContainer.style.display = 'none';
     }
+}
+
+// 创建授权行的辅助函数
+function createAuthRow(auth, index, isReadOnly = false) {
+    const row = document.createElement('tr');
+    row.setAttribute('data-row-index', index);
+    
+    if (editingRowIndex === index && !isReadOnly) {
+        // 编辑模式（仅直接授权可编辑）
+        row.innerHTML = `
+            <td>${auth.appName}</td>
+            <td>${auth.subject}</td>
+            <td>
+                <div class="edit-validity-container">
+                    <div class="radio-group-inline">
+                        <label class="radio-inline">
+                            <input type="radio" name="editValidityType_${index}" value="permanent" ${auth.validityType === 'permanent' ? 'checked' : ''}>
+                            永久有效
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" name="editValidityType_${index}" value="temporary" ${auth.validityType === 'temporary' ? 'checked' : ''}>
+                            设置有效期
+                        </label>
+                    </div>
+                    <div class="date-inputs" id="editDateInputs_${index}" style="${auth.validityType === 'permanent' ? 'display: none;' : 'display: block;'}">
+                        <input type="date" id="editStartDate_${index}" value="${auth.startDate || ''}" class="date-input-small">
+                        <span>至</span>
+                        <input type="date" id="editEndDate_${index}" value="${auth.endDate || ''}" class="date-input-small">
+                    </div>
+                </div>
+            </td>
+            <td>
+                <span class="readonly-field">${auth.creator}</span>
+            </td>
+            <td>
+                <span class="readonly-field">${auth.role}</span>
+            </td>
+            <td>
+                <button class="save-auth-btn" onclick="saveEditingRow(${index})" style="color: #28a745; background: none; border: none; cursor: pointer; margin-right: 8px;">保存修改</button>
+                <button class="cancel-auth-btn" onclick="cancelEditingRow(${index})" style="color: #6c757d; background: none; border: none; cursor: pointer;">取消修改</button>
+            </td>
+        `;
+        
+        // 添加事件监听器
+        setTimeout(() => {
+            const permanentRadio = row.querySelector(`input[name="editValidityType_${index}"][value="permanent"]`);
+            const temporaryRadio = row.querySelector(`input[name="editValidityType_${index}"][value="temporary"]`);
+            const dateInputs = row.querySelector(`#editDateInputs_${index}`);
+            
+            if (permanentRadio && temporaryRadio && dateInputs) {
+                permanentRadio.addEventListener('change', () => {
+                    if (permanentRadio.checked) {
+                        dateInputs.style.display = 'none';
+                    }
+                });
+                
+                temporaryRadio.addEventListener('change', () => {
+                    if (temporaryRadio.checked) {
+                        dateInputs.style.display = 'block';
+                    }
+                });
+            }
+        }, 0);
+    } else {
+        // 显示模式 - 间接授权和直接授权都使用行内编辑
+        const actionButtons = `<button class="edit-auth-btn" onclick="startEditingRow(${index})" style="color: #007bff; background: none; border: none; cursor: pointer; margin-right: 8px;">编辑有效期</button><button class="remove-auth-btn" onclick="removeAuthRow(${index}, '${auth.type}', ${currentResourceId})" style="color: #dc3545; background: none; border: none; cursor: pointer;">取消授权</button>`;
+        
+        row.innerHTML = `
+            <td>${auth.appName}</td>
+            <td>${auth.subject}</td>
+            <td>${auth.validity}</td>
+            <td>${auth.creator}</td>
+            <td>${auth.role}</td>
+            <td>${actionButtons}</td>
+        `;
+    }
+    
+    return row;
 }
 
 // 开始编辑行
@@ -2582,13 +2618,15 @@ function saveEditingRow(index) {
                     }
                 }
             } else if (authData.type === 'indirect' && resource.validity.periods) {
-                // 间接授权：更新对应的时间段（间接授权的index需要减1来对应periods数组索引）
-                const periodIndex = index - 1;
-                if (resource.validity.periods[periodIndex]) {
+                // 间接授权：计算正确的时间段索引
+                const directAuthCount = currentAuthData.filter(auth => auth.type === 'direct').length;
+                const indirectIndex = index - directAuthCount;
+                
+                if (resource.validity.periods[indirectIndex]) {
                     if (validityType === 'permanent') {
-                        resource.validity.periods[periodIndex] = { type: 'permanent' };
+                        resource.validity.periods[indirectIndex] = { type: 'permanent' };
                     } else {
-                        resource.validity.periods[periodIndex] = { startDate: startDate, endDate: endDate };
+                        resource.validity.periods[indirectIndex] = { startDate: startDate, endDate: endDate };
                     }
                     
                     // 检查是否包含永久授权，如果是则更新validity.type为combined
@@ -2639,6 +2677,13 @@ function cancelEditingRow(index) {
 
 // 添加新授权行
 function addNewAuthRow() {
+    // 检查是否已有直接授权
+    const hasDirectAuth = currentAuthData.some(auth => auth.type === 'direct');
+    if (hasDirectAuth) {
+        showToast('直接授权最多只能有一条，请先删除现有直接授权', 'warning');
+        return;
+    }
+    
     // 如果有行正在编辑，先保存或取消
     if (editingRowIndex !== null) {
         if (!confirmUnsavedChanges()) {
@@ -2653,7 +2698,7 @@ function addNewAuthRow() {
     // 创建新的授权数据
     const newAuth = {
         appName: appName,
-        subject: `${currentEntity} → ${appName}`,
+        subject: currentEntity,
         validity: '永久授权',
         validityType: 'permanent',
         startDate: null,
@@ -3319,41 +3364,8 @@ function initUserSelectDropdown() {
 function editAuthRow(index) {
     console.log('编辑授权行:', index);
     
-    // 获取当前授权数据（这里使用固定数据，实际应用中应该从数据源获取）
-    const authData = [
-        {
-            appName: '程序员工具集',
-            subject: '应用组 → 所有应用组',
-            validity: '永久授权',
-            creator: '张明华',
-            role: '总管理员',
-            type: 'permanent',
-            startDate: null,
-            endDate: null
-        },
-        {
-            appName: '程序员工具集',
-            subject: '应用组 → 所有公司用户',
-            validity: '永久授权',
-            creator: '李雅琴',
-            role: '总管理员',
-            type: 'permanent',
-            startDate: null,
-            endDate: null
-        },
-        {
-            appName: '程序员工具集',
-            subject: '所有公司部门',
-            validity: '2023-01-01 至 2023-12-31',
-            creator: '-',
-            role: '总管理员',
-            type: 'temporary',
-            startDate: '2023-01-01',
-            endDate: '2023-12-31'
-        }
-    ];
-    
-    const currentAuth = authData[index];
+    // 使用当前的授权数据
+    const currentAuth = currentAuthData[index];
     if (!currentAuth) {
         showToast('未找到授权数据', 'error');
         return;
@@ -3374,31 +3386,31 @@ function editAuthRow(index) {
             <div class="modal-body">
                 <div class="form-group">
                     <label>应用名称：</label>
-                    <span>${currentAuth.appName}</span>
+                    <span>${currentAuth.app || currentAuth.appName || '未知应用'}</span>
                 </div>
                 <div class="form-group">
                     <label>授权主体：</label>
-                    <span>${currentAuth.subject}</span>
+                    <span>${currentAuth.subject || '未知主体'}</span>
                 </div>
                 <div class="form-group">
                     <label>授权有效期：</label>
                     <div class="radio-group">
                         <div class="radio-item">
-                            <input type="radio" id="editPermanentRadio" name="editValidityType" value="permanent" ${currentAuth.type === 'permanent' ? 'checked' : ''}>
+                            <input type="radio" id="editPermanentRadio" name="editValidityType" value="permanent" ${(currentAuth.validity && currentAuth.validity.type === 'permanent') || currentAuth.type === 'permanent' ? 'checked' : ''}>
                             <label for="editPermanentRadio">永久有效</label>
                         </div>
                         <div class="radio-item">
-                            <input type="radio" id="editTemporaryRadio" name="editValidityType" value="temporary" ${currentAuth.type === 'temporary' ? 'checked' : ''}>
+                            <input type="radio" id="editTemporaryRadio" name="editValidityType" value="temporary" ${(currentAuth.validity && currentAuth.validity.type === 'temporary') || currentAuth.type === 'temporary' ? 'checked' : ''}>
                             <label for="editTemporaryRadio">设置有效期</label>
                         </div>
                     </div>
                 </div>
-                <div id="editDateRangeGroup" class="form-group" style="display: ${currentAuth.type === 'temporary' ? 'block' : 'none'}">
+                <div id="editDateRangeGroup" class="form-group" style="display: ${((currentAuth.validity && currentAuth.validity.type === 'temporary') || currentAuth.type === 'temporary') ? 'block' : 'none'}">
                     <label>有效期：</label>
                     <div class="date-range">
-                        <input type="date" id="editStartDate" value="${currentAuth.startDate || ''}">
+                        <input type="date" id="editStartDate" value="${(currentAuth.validity && currentAuth.validity.startDate) || currentAuth.startDate || ''}">
                         <span>至</span>
-                        <input type="date" id="editEndDate" value="${currentAuth.endDate || ''}">
+                        <input type="date" id="editEndDate" value="${(currentAuth.validity && currentAuth.validity.endDate) || currentAuth.endDate || ''}">
                     </div>
                 </div>
             </div>
@@ -3441,50 +3453,55 @@ function removeAuthRow(index, authType, resourceId) {
         if (resourceIndex !== -1) {
             const resource = resourcesData[resourceIndex];
             
-            // 如果删除的是直接授权
-            if (authType === 'direct') {
-                // 对于组合授权，删除第一个时间段（直接授权）
-                if (resource.validity.periods && resource.validity.periods.length > 1) {
-                    // 删除第一个时间段，保留间接授权
-                    resource.validity.periods.splice(0, 1);
-                    // 如果只剩一个时间段，转换为单个授权
-                    if (resource.validity.periods.length === 1) {
-                        const remainingPeriod = resource.validity.periods[0];
-                        if (remainingPeriod.type === 'permanent') {
-                            resource.validity = {
-                                type: 'permanent',
-                                startDate: null,
-                                endDate: null
-                            };
-                        } else {
-                            resource.validity = {
-                                type: 'temporary',
-                                startDate: remainingPeriod.startDate,
-                                endDate: remainingPeriod.endDate
-                            };
-                        }
-                    }
+            // 根据periodIndex删除对应的授权记录
+            const authToDelete = currentAuthData[index];
+            const periodIndex = authToDelete.periodIndex;
+            
+            if (resource.validity.periods && periodIndex >= 0 && periodIndex < resource.validity.periods.length) {
+                // 删除指定索引的时间段
+                resource.validity.periods.splice(periodIndex, 1);
+                
+                // 删除操作后，剩余授权的isDirect属性应该保持不变
+                // 授权类型是固定属性，不应该因为删除操作而改变
+                if (authType === 'direct') {
+                    // 删除直接授权后，剩余的间接授权保持其原有的isDirect=false属性
+                    // 不需要修改任何剩余授权的isDirect属性
                 } else {
-                    // 对于单个授权，设置为未授权状态
+                    // 删除间接授权后，剩余的授权（无论是直接还是间接）都保持其原有的isDirect属性
+                    // 不需要修改任何剩余授权的isDirect属性
+                }
+                
+                // 如果删除后没有时间段了，设置为未授权
+                if (resource.validity.periods.length === 0) {
                     resource.validity = {
                         type: 'unauthorized'
                     };
                     resource.icon = '未';
                     resource.iconColor = 'gray';
-                }
-            } else {
-                // 删除间接授权（从periods数组中删除对应项）
-                if (resource.validity.periods && index < resource.validity.periods.length) {
-                    resource.validity.periods.splice(index, 1);
-                    // 如果删除后没有时间段了，设置为未授权
-                    if (resource.validity.periods.length === 0) {
+                } else if (resource.validity.periods.length === 1) {
+                    // 如果只剩一个时间段，转换为单个授权
+                    const remainingPeriod = resource.validity.periods[0];
+                    if (remainingPeriod.type === 'permanent') {
                         resource.validity = {
-                            type: 'unauthorized'
+                            type: 'permanent',
+                            startDate: null,
+                            endDate: null
                         };
-                        resource.icon = '未';
-                        resource.iconColor = 'gray';
+                    } else {
+                        resource.validity = {
+                            type: 'temporary',
+                            startDate: remainingPeriod.startDate,
+                            endDate: remainingPeriod.endDate
+                        };
                     }
                 }
+            } else {
+                // 对于单个授权，设置为未授权状态
+                resource.validity = {
+                    type: 'unauthorized'
+                };
+                resource.icon = '未';
+                resource.iconColor = 'gray';
             }
             
             console.log('删除授权行:', index, '更新后的资源数据:', resource);
@@ -3492,18 +3509,13 @@ function removeAuthRow(index, authType, resourceId) {
             
             // 重新渲染主表格以反映变化
             renderResourceTable(document.getElementById('resourceSearch').value, currentAppType);
+            
+            // 重新加载抽屉内容以反映删除后的变化
+            viewOtherAuth(resourceId);
         }
-        
-        // 重新加载抽屉内容以显示更新后的数据
-        viewOtherAuth(resourceId);
-        
-        // 删除直接授权后，使用表格内第一行按钮而非底部按钮
-        if (authType === 'direct') {
-            const addAuthContainer = document.getElementById('addAuthContainer');
-            if (addAuthContainer) {
-                addAuthContainer.style.display = 'none';
-            }
-        }
+    } else {
+        // 用户选择取消，不执行任何操作
+        console.log('用户取消了删除操作');
     }
 }
 
@@ -3547,8 +3559,8 @@ function saveEditAuth(index) {
         const resource = resourcesData[resourceIndex];
         const authData = currentAuthData[index];
         
-        // 如果是直接授权（第一条记录且type为direct）
-        if (index === 0 && authData.type === 'direct') {
+        // 如果是直接授权
+        if (authData.type === 'direct') {
             if (resource.validity.periods) {
                 // 组合授权：更新第一个时间段
                 if (validityType === 'permanent') {
@@ -3573,12 +3585,16 @@ function saveEditAuth(index) {
                 }
             }
         } else if (authData.type === 'indirect' && resource.validity.periods) {
-            // 间接授权：更新对应的时间段（index对应periods数组中的索引）
-            if (resource.validity.periods[index]) {
+            // 间接授权：找到对应的时间段进行更新
+            // 间接授权在currentAuthData中的索引需要减去直接授权的数量
+            const directAuthCount = currentAuthData.filter(auth => auth.type === 'direct').length;
+            const indirectIndex = index - directAuthCount;
+            
+            if (resource.validity.periods[indirectIndex]) {
                 if (validityType === 'permanent') {
-                    resource.validity.periods[index] = { type: 'permanent' };
+                    resource.validity.periods[indirectIndex] = { type: 'permanent' };
                 } else {
-                    resource.validity.periods[index] = { startDate: startDate, endDate: endDate };
+                    resource.validity.periods[indirectIndex] = { startDate: startDate, endDate: endDate };
                 }
             }
         }
